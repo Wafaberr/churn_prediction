@@ -1,0 +1,70 @@
+{% extends "layout.html" %}
+
+{% block title %}Datasets List{% endblock %}
+
+{% block head_extra %}
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+    .dataset-item:hover {
+        background-color: #f9fafb;
+        transition: background-color 0.2s ease;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8 max-w-4xl">
+    <!-- Header section -->
+    <header class="mb-8">
+        <h1 class="text-2xl font-bold text-gray-800 mb-2">Datasets</h1>
+        <p class="text-gray-600">Please click on an item to know more about it</p>
+    </header>
+
+    <!-- Search bar -->
+    <div class="relative mb-6">
+        <input type="text" placeholder="Search" 
+               class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+        <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+    </div>
+
+    <!-- Datasets list -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <ul class="divide-y divide-gray-200">
+            {% for file in files %}
+            <li class="dataset-item">
+                <a href="{{ url_for('newprojet', filename=file.name) }}" class="block p-4 hover:bg-gray-50">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h3 class="text-lg font-medium text-gray-800">{{ file.name }}</h3>
+                            <p class="text-sm text-gray-500 mt-1">
+                                <i class="far fa-clock mr-1"></i>
+                                Updated {{ file.updated }}
+                            </p>
+                        </div>
+                        <i class="fas fa-chevron-right text-gray-400 mt-1"></i>
+                    </div>
+                </a>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+
+<script>
+    // Search functionality
+    document.querySelector('input[type="text"]').addEventListener('input', function(e) {
+        const searchTerm = e.target.value.toLowerCase();
+        const items = document.querySelectorAll('.dataset-item');
+        
+        items.forEach(item => {
+            const fileName = item.querySelector('h3').textContent.toLowerCase();
+            if (fileName.includes(searchTerm)) {
+                item.style.display = 'block';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    });
+</script>
+{% endblock %}

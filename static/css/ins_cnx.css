@@ -1,0 +1,232 @@
+/* Réinitialisation de base des styles */
+* {
+    box-sizing: border-box; /* Inclut les bordures et paddings dans les dimensions des éléments */
+    margin: 0; /* Retire les marges par défaut */
+    padding: 0; /* Retire les paddings par défaut */
+}
+
+/* Style général pour le corps de la page */
+body {
+    font-family: 'Libre Franklin', sans-serif; /* Utilise la police 'Libre Franklin' pour le texte */
+}
+
+/* Style spécifique pour les titres h1 */
+h1 {
+    font-weight: bold; /* Met le texte en gras */
+    margin: 0; /* Retire la marge par défaut */
+    margin-bottom: 1rem; /* Ajoute un espace de 1rem sous le titre */
+}
+
+/* Style des paragraphes */
+p {
+    font-size: 14px; /* Taille de police de 14px */
+    font-weight: 100; /* Poids de police léger */
+    line-height: 20px; /* Espacement de ligne de 20px */
+    letter-spacing: 0.5px; /* Espacement entre les lettres de 0.5px */
+    margin: 20px 0 30px; /* Marge de 20px en haut, 30px en bas */
+}
+
+/* Style des éléments span */
+span {
+    font-size: 12px; /* Taille de police de 12px */
+}
+
+/* Style des liens */
+a {
+    color: #050c4e; /* Couleur du texte du lien */
+    font-size: 14px; /* Taille de police de 14px */
+    text-decoration: none; /* Retire le soulignement par défaut des liens */
+    margin: 15px 0; /* Ajoute une marge de 15px en haut et en bas du lien */
+}
+
+/* Boutons avec un dégradé de couleurs */
+.btn-grad {
+    background-image: linear-gradient(to right, #251c9c 0%, #080c45 51%, #4180a5 100%); /* Dégradé de couleur pour le bouton */
+    margin: 10px; /* Marge de 10px autour du bouton */
+    padding: 15px 45px; /* Padding de 15px en haut/bas et 45px à gauche/droite */
+    text-align: center; /* Centre le texte à l'intérieur du bouton */
+    text-transform: uppercase; /* Met le texte en majuscules */
+    transition: 0.5s; /* Transition fluide de 0.5s pour les changements d'état */
+    background-size: 200% auto; /* Taille du fond dégradé */
+    color: white; /* Couleur du texte en blanc */
+    border-radius: 10px; /* Coins arrondis avec un rayon de 10px */
+    display: block; /* Affiche le bouton en tant qu'élément de type bloc */
+    cursor: pointer; /* Change le curseur en pointeur lors du survol */
+}
+
+/* Effet au survol du bouton */
+.btn-grad:hover {
+    background-position: right center; /* Change la position du fond au survol */
+    color: #fff; /* Maintient la couleur blanche du texte */
+    text-decoration: none; /* Retire le soulignement du lien au survol */
+}
+
+/* Styles spécifiques aux formulaires de connexion et d'inscription */
+#signIn {
+    background-image: linear-gradient(to right, #fff 0%, #f7f3f3 51%, #fff 100%); /* Dégradé pour le formulaire de connexion */
+    color: #130b5f; /* Couleur du texte */
+}
+
+#signUp {
+    background-image: linear-gradient(to right, #fff 0%, #f7f3f3 51%, #fff 100%); /* Dégradé pour le formulaire d'inscription */
+    color: #130b5f; /* Couleur du texte */
+}
+
+/* Styles pour les formulaires */
+form {
+    background-color: #ffffff; /* Fond blanc pour le formulaire */
+    display: flex; /* Utilisation de Flexbox pour la disposition des éléments */
+    align-items: center; /* Aligne les éléments verticalement au centre */
+    justify-content: center; /* Centre les éléments horizontalement */
+    flex-direction: column; /* Organise les éléments en colonne */
+    padding: 0 50px; /* Ajoute du padding de 50px à gauche et à droite */
+    height: 100%; /* Hauteur du formulaire égale à 100% de son conteneur */
+    text-align: center; /* Centre le texte à l'intérieur du formulaire */
+}
+
+/* Style des champs de saisie (input) */
+input {
+    background-color: #eee; /* Fond gris clair */
+    border: none; /* Retire la bordure par défaut */
+    padding: 12px 15px; /* Padding interne pour le champ de saisie */
+    margin: 8px 0; /* Marge de 8px en haut et en bas */
+    width: 100%; /* Largeur de 100% pour occuper toute la largeur du conteneur */
+}
+
+/* Conteneur principal qui occupe toute la hauteur de la fenêtre */
+.body-container {
+    height: 100vh; /* Hauteur de 100% de la fenêtre */
+    display: flex; /* Utilisation de Flexbox pour centrer les éléments */
+    justify-content: center; /* Centre les éléments horizontalement */
+    align-items: center; /* Centre les éléments verticalement */
+    background: linear-gradient(to right, #ffffff, #133192); /* Dégradé du blanc au bleu foncé */
+}
+
+/* Conteneur du formulaire avec un fond blanc et une bordure arrondie */
+.container {
+    background-color: #ffffff; /* Fond blanc pour le conteneur */
+    border-radius: 10px; /* Coins arrondis */
+    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.25), 0 5px 5px rgba(0, 0, 0, 0.22); /* Ombre portée */
+    position: relative; /* Position relative pour les animations */
+    overflow: hidden; /* Cache le contenu débordant */
+    width: 768px; /* Largeur fixe de 768px */
+    max-width: 100%;
+    min-height: 480px; /* Hauteur minimale de 480px */
+}
+
+/* Conteneur de la forme avec une transition fluide */
+.form-container {
+    position: absolute; /* Position absolue pour superposer les éléments */
+    top: 0; /* Place le conteneur en haut du parent */
+    height: 100%; /* Hauteur du conteneur égale à 100% */
+    transition: all 0.6s ease-in-out; /* Transition fluide pour les transformations */
+}
+
+/* Styles spécifiques aux conteneurs de connexion et d'inscription */
+.sign-in-container {
+    left: 0; /* Positionne le conteneur de connexion à gauche */
+    width: 50%; /* Largeur de 50% */
+    z-index: 2; /* Définit un z-index plus élevé */
+}
+
+.sign-up-container {
+    left: 0; /* Positionne le conteneur d'inscription à gauche */
+    width: 50%; /* Largeur de 50% */
+    opacity: 0; /* Rendre l'inscription invisible par défaut */
+    z-index: 1; /* Définit un z-index plus bas */
+}
+
+/* Animation d'apparition du formulaire d'inscription */
+.container.right-panel-active .sign-in-container {
+    transform: translateX(100%); /* Déplace le formulaire de connexion à droite */
+}
+
+.container.right-panel-active .sign-up-container {
+    transform: translateX(100%); /* Déplace le formulaire d'inscription à droite */
+    opacity: 1; /* Rendre le formulaire d'inscription visible */
+    z-index: 5; /* Définit un z-index plus élevé */
+    animation: show 0.6s; /* Animation pour afficher le formulaire */
+}
+
+/* Animation clé pour l'apparition du formulaire */
+@keyframes show {
+    0%, 49.99% {
+        opacity: 0; /* Le formulaire est invisible au début */
+        z-index: 1; /* Il est derrière les autres éléments */
+    }
+    50%, 100% {
+        opacity: 1; /* Le formulaire devient visible à 50% */
+        z-index: 5; /* Le formulaire passe devant les autres éléments */
+    }
+}
+
+/* Conteneur de l'overlay */
+.overlay-container {
+    position: absolute; /* Position absolue pour superposer l'overlay */
+    top: 0; /* Positionne l'overlay en haut */
+    left: 50%; /* Positionne l'overlay à la moitié gauche du conteneur */
+    width: 50%; /* Largeur de 50% */
+    height: 100%; /* Hauteur de 100% */
+    overflow: hidden; /* Cache le contenu débordant */
+    transition: transform 0.6s ease-in-out; /* Transition fluide pour les transformations */
+    z-index: 100; /* Définit un z-index élevé pour l'overlay */
+}
+
+/* Animation pour déplacer l'overlay */
+.container.right-panel-active .overlay-container {
+    transform: translateX(-100%); /* Déplace l'overlay vers la gauche */
+}
+
+/* Style de l'overlay */
+.overlay {
+    background: linear-gradient(to right, #4170a5, #080945); /* Dégradé pour l'overlay */
+    color: #ffffff; /* Couleur du texte en blanc */
+    position: relative; /* Position relative pour le contenu */
+    left: -100%; /* Position de l'overlay à l'extérieur à gauche */
+    height: 100%; /* Hauteur de l'overlay à 100% */
+    width: 200%; /* Largeur de 200% pour étendre l'overlay */
+    transform: translateX(0); /* Position de départ à 0 */
+    transition: transform 0.6s ease-in-out; /* Transition fluide pour les transformations */
+}
+
+/* Animation de déplacement de l'overlay lorsqu'il est actif */
+.container.right-panel-active .overlay {
+    transform: translateX(50%); /* Déplace l'overlay vers la droite */
+}
+
+/* Panneaux à l'intérieur de l'overlay */
+.overlay-panel {
+    position: absolute; /* Position absolue pour superposer les panneaux */
+    display: flex; /* Utilisation de Flexbox pour centrer les éléments */
+    align-items: center; /* Centre verticalement */
+    justify-content: center; /* Centre horizontalement */
+    flex-direction: column; /* Organise les éléments en colonne */
+    padding: 0 40px; /* Padding interne de 40px */
+    text-align: center; /* Centre le texte */
+    top: 0; /* Positionne en haut */
+    height: 100%; /* Hauteur de 100% */
+    width: 50%; /* Largeur de 50% */
+    transform: translateX(0); /* Position de départ à 0 */
+    transition: transform 0.6s ease-in-out; /* Transition fluide pour les transformations */
+}
+
+/* Style spécifique pour le panneau gauche */
+.overlay-left {
+    transform: translateX(-20%); /* Déplace le panneau vers la gauche */
+}
+
+/* Animation pour le panneau gauche */
+.container.right-panel-active .overlay-left {
+    transform: translateX(0); /* Ramène le panneau à sa position d'origine */
+}
+
+/* Style spécifique pour le panneau droit */
+.overlay-right {
+    right: 0; /* Positionne le panneau à droite */
+    transform: translateX(0); /* Position de départ à 0 */
+}
+
+/* Animation pour le panneau droit */
+.container.right-panel-active .overlay-right {
+    transform: translateX(20%); /* Déplace le panneau vers la droite */
+}

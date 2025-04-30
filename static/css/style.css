@@ -1,0 +1,154 @@
+/* ============================
+   STYLE GENERAL DE LA PAGE
+   ============================ */
+   body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+/* ============================
+   SIDEBAR (BARRE LATERALE)
+   ============================ */
+.sidebar {
+    width: 220px;
+    height: 300vh;
+    position: fixed;
+    top: 56px; /* Laisse de l'espace pour la navbar */
+    left: 0;
+    background-color: #f5f6f7; /* Fond gris clair */
+    overflow-y: auto;
+    padding-top: 20px;
+    margin-top: 15px;
+}
+
+/* Liens dans la sidebar */
+.sidebar .nav-link {
+    color: #212529; /* Couleur du texte par défaut */
+    font-weight: 500; /* Texte légèrement plus gras */
+}
+
+/* Effet au survol sur les liens de la sidebar */
+.sidebar .nav-link:hover {
+    color: white; /* Texte blanc au survol */
+    background-image: linear-gradient(to right, #251c9c 0%, #080c45 51%, #4180a5 100%); /* Dégradé de couleur */
+    border-radius: 8px;
+    transition: 0.2s ease;
+}
+
+/* ============================
+   CONTENU PRINCIPAL
+   ============================ */
+#content {
+    margin-top: 23px;
+    margin-left: 240px; /* Laisse la place pour la sidebar */
+    padding: 20px;
+    width: 100%;
+    height: 300vh;
+    min-width: inherit;
+}
+
+.main-content {
+    margin-left: 10px;
+    background-color: white;
+    height: 100vh;
+    overflow-y: auto;
+}
+
+/* ============================
+   NAVBAR (BARRE SUPERIEURE)
+   ============================ */
+.navbar {
+    height: 60px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+}
+
+/* ============================
+   STYLE DES TABS (ONGLETS)
+   ============================ */
+.custom-tab-container {
+    border-bottom: 2px solid #ddd;
+    margin-bottom: 10px;
+}
+
+.custom-tab-list {
+    display: flex;
+    gap: 24px;
+    padding-left: 10px;
+}
+
+.custom-tab {
+    position: relative;
+    padding: 10px 0;
+    background: none;
+    border: none;
+    font-size: 14px;
+    color: #DFE3E8;
+    cursor: pointer;
+    outline: none;
+    transition: color 0.2s ease;
+}
+
+/* Survol d'un onglet */
+.custom-tab:hover {
+    color: #26292b; /* Couleur foncée au survol */
+}
+
+/* Onglet actif */
+.custom-tab.active {
+    color: #434447; /* Couleur foncée pour l'onglet actif */
+}
+
+/* Barre bleue sous l'onglet actif */
+.custom-tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background-color: #009dff;
+    border-radius: 2px;
+}
+
+/* Onglet actif dans nav-tabs */
+.nav-tabs .nav-link.active {
+    font-weight: bold;
+    border-bottom: 3px solid #0d6efd;
+}
+
+/* ============================
+   STYLE DU LOGO
+   ============================ */
+.logo-image {
+    height: auto; /* Hauteur automatique */
+    width: 120px; /* Largeur fixée */
+    object-fit: scale-down; /* Pas de déformation de l'image */
+    background: none;
+    border-radius: 5px;
+    
+    display: block;
+}
+
+/* Animation légère sur le logo au survol (bonus optionnel) */
+.logo-image:hover {
+    transform: scale(1.05);
+    transition: transform 0.3s ease;
+}
+
+
+/* Style pour les liens actifs dans la sidebar */
+.offcanvas .nav-link.active {
+    background-color: #0d6efd;
+    color: white;
+    border-radius: 5px;
+}
+
+/* Style pour les liens au survol */
+.offcanvas .nav-link:hover {
+    background-color: #e9ecef;
+    color: #0d6efd;
+    border-radius: 5px;
+}

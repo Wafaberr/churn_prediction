@@ -1,0 +1,817 @@
+{% extends "layout.html" %}
+
+{% block head_extra %}
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dataset Statistics</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+  <style>
+    /* Container principal avec hauteur flexible */
+    .main-container {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      background-color: #f8fafc;
+    }
+    
+    /* Styles pour les boutons d'onglets */
+    .tab-container {
+      position: relative;
+      display: inline-flex;
+      background: #f1f5f9;
+      border-radius: 0.75rem;
+      padding: 0.25rem;
+      margin-left: auto;
+      box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
+    }
+    
+    .tab-button {
+      padding: 0.5rem 1.25rem;
+      border-radius: 0.5rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      position: relative;
+      z-index: 1;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .tab-button.active {
+      color: white;
+    }
+    
+    .tab-button.inactive {
+      color: #64748b;
+    }
+    
+    .tab-indicator {
+      position: absolute;
+      height: calc(100% - 0.5rem);
+      border-radius: 0.5rem;
+      background-color: #3b82f6;
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      z-index: 0;
+      top: 0.25rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    
+    /* Styles pour le tableau scrollable */
+    .scrollable-container {
+      flex: 1;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      background-color: white;
+      border-radius: 0.75rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    
+    .table-wrapper {
+      flex: 1;
+      overflow-y: auto;
+      position: relative;
+    }
+    
+    /* Styles pour le tableau */
+    table {
+      width: 100%;
+      table-layout: fixed;
+      font-size: 0.875rem;
+    }
+    
+    th, td {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      padding: 0.75rem 1rem;
+    }
+    
+    th {
+      position: sticky;
+      top: 0;
+      background: #f8fafc;
+      z-index: 10;
+      font-weight: 600;
+      color: #334155;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    
+    /* Styles pour les modals */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 100;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.5);
+      backdrop-filter: blur(4px);
+      animation: fadeIn 0.2s ease-out;
+    }
+    
+    .modal-content {
+      background-color: white;
+      margin: 5% auto;
+      padding: 1.5rem;
+      border-radius: 0.75rem;
+      width: 90%;
+      max-width: 900px;
+      max-height: 85vh;
+      overflow-y: auto;
+      box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
+      animation: slideDown 0.3s ease-out;
+    }
+    
+    .close-button {
+      color: #94a3b8;
+      float: right;
+      font-size: 1.5rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+    
+    .close-button:hover {
+      color: #64748b;
+    }
+    
+    /* Styles pour les cartes de colonnes */
+    .column-card {
+      padding: 1rem;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: 1px solid #e2e8f0;
+      background-color: white;
+    }
+    
+    .column-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.02);
+      border-color: #cbd5e1;
+    }
+    
+    /* Autres styles */
+    .numeric-cell {
+      font-family: 'Roboto Mono', monospace;
+      text-align: right;
+      color: #334155;
+    }
+    
+    .sticky-header {
+      position: sticky;
+      top: 0;
+      background: white;
+      z-index: 50;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    
+    .sticky-footer {
+      position: sticky;
+      bottom: 0;
+      background: white;
+      z-index: 40;
+      box-shadow: 0 -1px 3px rgba(0,0,0,0.05);
+    }
+    
+    tr:nth-child(even) {
+      background-color: #f8fafc;
+    }
+    
+    tr:hover {
+      background-color: #f1f5f9;
+    }
+    
+    .dataset-title {
+      max-width: 300px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    .chart-container {
+      width: 100%;
+      height: 400px;
+      margin-top: 1.5rem;
+    }
+    
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.25rem 0.5rem;
+      border-radius: 0.375rem;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+    
+    .badge-type {
+      background-color: #e0f2fe;
+      color: #0369a1;
+    }
+    
+    .badge-missing {
+      background-color: #fee2e2;
+      color: #b91c1c;
+    }
+    
+    .badge-unique {
+      background-color: #dcfce7;
+      color: #166534;
+    }
+    
+    /* Animations */
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    
+    @keyframes slideDown {
+      from { 
+        opacity: 0; 
+        transform: translateY(-20px);
+      }
+      to { 
+        opacity: 1; 
+        transform: translateY(0);
+      }
+    }
+    
+    /* Responsive */
+    @media (min-width: 768px) {
+      .dataset-title {
+        max-width: 500px;
+      }
+      
+      .column-grid {
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      }
+    }
+    
+    @media (max-width: 640px) {
+      .tab-button {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.75rem;
+      }
+      
+      th, td {
+        padding: 0.5rem;
+      }
+    }
+  </style>
+{% endblock %}
+
+{% block content %}
+<div class="main-container">
+  <!-- Header -->
+  <div class="sticky-header border-b border-gray-200 bg-white">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between py-4 gap-4">
+        <!-- Nom du dataset et infos -->
+        <div class="flex flex-col min-w-0">
+          <div class="flex items-center">
+            <div class="p-2 rounded-lg bg-blue-50 mr-3">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
+            </div>
+            <div class="min-w-0">
+              <h1 class="text-xl sm:text-2xl font-bold text-gray-800 dataset-title" title="{{ filename }}">
+                {{ filename }}
+              </h1>
+              <div class="flex flex-wrap gap-x-4 gap-y-2 mt-2 text-sm text-gray-500">
+                <div class="flex items-center">
+                  <i data-feather="database" class="h-4 w-4 mr-1"></i>
+                  <span><strong>{{ num_rows|number_format }}</strong> lignes</span>
+                </div>
+                <div class="flex items-center">
+                  <i data-feather="columns" class="h-4 w-4 mr-1"></i>
+                  <span><strong>{{ num_cols }}</strong> colonnes</span>
+                </div>
+                <div class="flex items-center">
+                  <i data-feather="clock" class="h-4 w-4 mr-1"></i>
+                  <span>Dernière modification: {{ last_modified|default("Aujourd'hui") }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Boutons d'onglets -->
+        <div class="tab-container">
+          <div class="tab-indicator" style="width: 100px; transform: translateX(0);"></div>
+          <div class="tab-button active" onclick="moveTab(0)">
+            <i data-feather="eye"></i>
+            <span>Aperçu</span>
+          </div>
+          <div class="tab-button inactive" onclick="moveTab(1)">
+            <i data-feather="layout"></i>
+            <span>Schéma</span>
+          </div>
+          <div class="tab-button inactive" onclick="moveTab(2)">
+            <i data-feather="bar-chart-2"></i>
+            <span>Statistiques</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Contenu principal -->
+  <div class="flex-1 container mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <!-- Section PREVIEW -->
+    <div id="preview-section" class="h-full">
+      <div class="scrollable-container">
+        <div class="table-wrapper">
+          <table class="w-full divide-y divide-gray-200">
+            <thead>
+              <tr>
+                {% for col in data_preview[0].keys() %}
+                <th class="text-left">
+                  <div class="flex flex-col">
+                    <span class="font-semibold">{{ col }}</span>
+                    <div class="flex gap-2 mt-1">
+                      <span class="badge badge-type">{{ column_types[col] }}</span>
+                      {% if missing_values[col] > 0 %}
+                        <span class="badge badge-missing">{{ missing_values[col] }} manquants</span>
+                      {% endif %}
+                    </div>
+                  </div>
+                </th>
+                {% endfor %}
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+              {% for row in data_preview %}
+              <tr>
+                {% for value in row.values() %}
+                <td class="{% if value is number %}numeric-cell{% endif %}">
+                  {{ value if value is not none else '<span class="text-gray-400 italic">null</span>'|safe }}
+                </td>
+                {% endfor %}
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section SCHEMA -->
+    <div id="schema-section" class="h-full hidden">
+      <div class="scrollable-container">
+        <div class="p-6">
+          <div class="flex justify-between items-center mb-6">
+            <h2 class="text-xl font-semibold text-gray-800">Schéma des colonnes</h2>
+            <div class="relative">
+              <input type="text" placeholder="Rechercher une colonne..." 
+                     class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                     oninput="filterColumns(this.value)">
+              <i data-feather="search" class="absolute left-3 top-2.5 h-4 w-4 text-gray-400"></i>
+            </div>
+          </div>
+          
+          <div class="column-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="columns-container">
+            {% for col in column_types.keys() %}
+            <div class="column-card" onclick="showColumnChart('{{ col }}')">
+              <div class="flex justify-between items-start">
+                <h3 class="font-medium text-gray-900 truncate">{{ col }}</h3>
+                <span class="badge badge-type">{{ column_types[col] }}</span>
+              </div>
+              
+              <div class="flex gap-2 mt-3">
+                {% if missing_values[col] > 0 %}
+                  <span class="badge badge-missing">{{ missing_values[col] }} manquants</span>
+                {% endif %}
+                <span class="badge badge-unique">{{ column_stats[col]['unique'] }} uniques</span>
+              </div>
+              
+              {% if column_stats[col].get('top') %}
+              <div class="mt-3 text-sm text-gray-600">
+                <p class="font-medium">Valeurs fréquentes:</p>
+                <ul class="list-disc list-inside mt-1">
+                  {% for value, count in column_stats[col]['top'].items() %}
+                  <li class="truncate">{{ value }} ({{ count }})</li>
+                  {% endfor %}
+                </ul>
+              </div>
+              {% endif %}
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section STATISTICS -->
+    <div id="statistics-section" class="h-full hidden">
+      <div class="scrollable-container">
+        <div class="table-wrapper">
+          <table class="w-full divide-y divide-gray-200">
+            <thead>
+              <tr>
+                <th class="text-left">Colonne</th>
+                <th class="text-left">Type</th>
+                <th class="text-left">Manquants</th>
+                <th class="text-left">Uniques</th>
+                <th class="text-left">Moyenne</th>
+                <th class="text-left">Écart-type</th>
+                <th class="text-left">Min</th>
+                <th class="text-left">Max</th>
+                <th class="text-left">25%</th>
+                <th class="text-left">50%</th>
+                <th class="text-left">75%</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+              {% for col, stats in column_stats.items() %}
+              <tr class="hover:bg-gray-50">
+                <td class="font-medium text-gray-900">{{ col }}</td>
+                <td><span class="badge badge-type">{{ column_types[col] }}</span></td>
+                <td>
+                  {% if stats['missing'] > 0 %}
+                    <span class="badge badge-missing">{{ stats['missing'] }}</span>
+                  {% else %}
+                    <span class="text-gray-500">0</span>
+                  {% endif %}
+                </td>
+                <td><span class="badge badge-unique">{{ stats['unique'] }}</span></td>
+                <td class="numeric-cell">{{ stats.get('mean', 'N/A') }}</td>
+                <td class="numeric-cell">{{ stats.get('std', 'N/A') }}</td>
+                <td class="numeric-cell">{{ stats.get('min', 'N/A') }}</td>
+                <td class="numeric-cell">{{ stats.get('max', 'N/A') }}</td>
+                <td class="numeric-cell">{{ stats.get('25%', 'N/A') }}</td>
+                <td class="numeric-cell">{{ stats.get('50%', 'N/A') }}</td>
+                <td class="numeric-cell">{{ stats.get('75%', 'N/A') }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="sticky-footer border-t border-gray-200 bg-white py-3">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
+        <div class="text-sm text-gray-500">
+          Affichage des lignes 1 à {{ data_preview|length }} sur {{ num_rows|number_format }} au total
+        </div>
+        <div class="flex items-center space-x-2">
+          <button class="px-3 py-1.5 border border-gray-300 rounded-lg text-sm flex items-center gap-1 hover:bg-gray-50">
+            <i data-feather="chevron-left" class="h-4 w-4"></i>
+            Précédent
+          </button>
+          <button class="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-sm font-medium">
+            1
+          </button>
+          <button class="px-3 py-1.5 border border-gray-300 rounded-lg text-sm flex items-center gap-1 hover:bg-gray-50">
+            Suivant
+            <i data-feather="chevron-right" class="h-4 w-4"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal pour afficher les diagrammes -->
+<div id="chartModal" class="modal">
+  <div class="modal-content">
+    <span class="close-button" onclick="closeModal()">&times;</span>
+    <div class="flex justify-between items-center mb-4">
+      <h2 id="modalTitle" class="text-xl font-bold text-gray-800"></h2>
+      <div class="flex gap-2" id="chartTypeButtons">
+        <button class="px-3 py-1 text-xs rounded-full bg-blue-100 text-blue-800" onclick="changeChartType('bar')">Barres</button>
+        <button class="px-3 py-1 text-xs rounded-full bg-gray-100 text-gray-800" onclick="changeChartType('pie')">Camembert</button>
+        <button class="px-3 py-1 text-xs rounded-full bg-gray-100 text-gray-800" onclick="changeChartType('line')">Ligne</button>
+      </div>
+    </div>
+    
+    <div class="chart-container">
+      <canvas id="columnChart"></canvas>
+    </div>
+    
+    <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4" id="statsSummary"></div>
+  </div>
+</div>
+
+<script>
+// Variables globales
+let currentChart = null;
+let currentChartData = null;
+let currentColumnName = '';
+
+// Initialisation des icônes Feather
+document.addEventListener('DOMContentLoaded', function() {
+    feather.replace();
+    moveTab(0); // Afficher PREVIEW par défaut
+});
+
+// Fonction pour changer d'onglet
+function moveTab(index) {
+    // Animation de l'indicateur glissant
+    const tabs = document.querySelectorAll('.tab-button');
+    const indicator = document.querySelector('.tab-indicator');
+    const tabWidth = tabs[index].offsetWidth;
+    
+    indicator.style.width = `${tabWidth}px`;
+    indicator.style.transform = `translateX(${tabs[index].offsetLeft - tabs[0].offsetLeft}px)`;
+    
+    // Changement de couleur pour les onglets
+    tabs.forEach((tab, idx) => {
+        if (idx === index) {
+            tab.classList.remove('inactive');
+            tab.classList.add('active');
+        } else {
+            tab.classList.remove('active');
+            tab.classList.add('inactive');
+        }
+    });
+
+    // Affichage des sections
+    document.getElementById('preview-section').classList.toggle('hidden', index !== 0);
+    document.getElementById('schema-section').classList.toggle('hidden', index !== 1);
+    document.getElementById('statistics-section').classList.toggle('hidden', index !== 2);
+    
+    // Mise à jour des icônes
+    setTimeout(() => feather.replace(), 10);
+}
+
+// Fonction de filtrage des colonnes
+function filterColumns(searchTerm) {
+    const columns = document.querySelectorAll('.column-card');
+    const searchLower = searchTerm.toLowerCase();
+    
+    columns.forEach(column => {
+        const columnName = column.querySelector('h3').textContent.toLowerCase();
+        if (columnName.includes(searchLower)) {
+            column.style.display = 'block';
+        } else {
+            column.style.display = 'none';
+        }
+    });
+}
+
+// Fonction pour afficher le modal avec le diagramme
+async function showColumnChart(columnName) {
+    const modal = document.getElementById('chartModal');
+    const modalTitle = document.getElementById('modalTitle');
+    const chartCanvas = document.getElementById('columnChart');
+    const statsSummary = document.getElementById('statsSummary');
+    
+    currentColumnName = columnName;
+    
+    // Afficher un indicateur de chargement
+    modalTitle.textContent = `Chargement des données pour ${columnName}...`;
+    statsSummary.innerHTML = '<div class="col-span-3 text-center py-4">Chargement en cours...</div>';
+    modal.style.display = 'block';
+    
+    try {
+        // Récupérer les données depuis le serveur
+        const response = await fetch(`/get_column_data/{{ filename }}/${encodeURIComponent(columnName)}`);
+        const data = await response.json();
+        
+        if (!response.ok) {
+            throw new Error(data.error || 'Erreur lors de la récupération des données');
+        }
+        
+        // Sauvegarder les données pour les changements de type de graphique
+        currentChartData = data;
+        
+        // Mettre à jour le titre du modal
+        modalTitle.textContent = `${columnName} (${data.type})`;
+        
+        // Afficher les statistiques résumées
+        updateStatsSummary(data.stats);
+        
+        // Créer le graphique initial
+        createChart(data, 'bar');
+        
+    } catch (error) {
+        console.error('Erreur:', error);
+        modalTitle.textContent = `Erreur: ${error.message}`;
+        statsSummary.innerHTML = `<div class="col-span-3 text-center py-4 text-red-500">${error.message}</div>`;
+    }
+}
+
+// Fonction pour créer ou mettre à jour le graphique
+function createChart(data, chartType = 'bar') {
+    const chartCanvas = document.getElementById('columnChart');
+    
+    // Détruire le graphique précédent s'il existe
+    if (currentChart) {
+        currentChart.destroy();
+    }
+    
+    // Options communes
+    const commonOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'top',
+            },
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        let label = context.dataset.label || '';
+                        if (label) {
+                            label += ': ';
+                        }
+                        if (context.parsed.y !== undefined) {
+                            label += context.parsed.y;
+                        } else {
+                            label += context.parsed;
+                        }
+                        return label;
+                    }
+                }
+            }
+        }
+    };
+    
+    // Options spécifiques au type de graphique
+    let chartConfig;
+    const isNumeric = data.type.includes('float') || data.type.includes('int');
+    
+    if (chartType === 'pie' || chartType === 'doughnut') {
+        chartConfig = {
+            type: chartType,
+            data: {
+                labels: data.data.labels.slice(0, 10),
+                datasets: [{
+                    label: currentColumnName,
+                    data: data.data.values.slice(0, 10),
+                    backgroundColor: [
+                        'rgba(59, 130, 246, 0.7)',
+                        'rgba(16, 185, 129, 0.7)',
+                        'rgba(245, 158, 11, 0.7)',
+                        'rgba(236, 72, 153, 0.7)',
+                        'rgba(139, 92, 246, 0.7)',
+                        'rgba(20, 184, 166, 0.7)',
+                        'rgba(249, 115, 22, 0.7)',
+                        'rgba(244, 63, 94, 0.7)',
+                        'rgba(139, 92, 246, 0.7)',
+                        'rgba(6, 182, 212, 0.7)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                ...commonOptions,
+                plugins: {
+                    ...commonOptions.plugins,
+                    title: {
+                        display: true,
+                        text: `Répartition de ${currentColumnName}`
+                    }
+                }
+            }
+        };
+    } else if (chartType === 'line') {
+        chartConfig = {
+            type: 'line',
+            data: {
+                labels: data.data.labels,
+                datasets: [{
+                    label: currentColumnName,
+                    data: data.data.values,
+                    borderColor: 'rgba(59, 130, 246, 1)',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.1
+                }]
+            },
+            options: {
+                ...commonOptions,
+                plugins: {
+                    ...commonOptions.plugins,
+                    title: {
+                        display: true,
+                        text: `Tendance de ${currentColumnName}`
+                    }
+                },
+                scales: {
+                    y: { beginAtZero: !isNumeric }
+                }
+            }
+        };
+    } else { // bar par défaut
+        chartConfig = {
+            type: 'bar',
+            data: {
+                labels: data.data.labels,
+                datasets: [{
+                    label: currentColumnName,
+                    data: data.data.values,
+                    backgroundColor: 'rgba(59, 130, 246, 0.7)',
+                    borderColor: 'rgba(59, 130, 246, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                ...commonOptions,
+                plugins: {
+                    ...commonOptions.plugins,
+                    title: {
+                        display: true,
+                        text: `Distribution de ${currentColumnName}`
+                    }
+                },
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        };
+    }
+    
+    currentChart = new Chart(chartCanvas, chartConfig);
+}
+
+// Fonction pour mettre à jour le résumé des statistiques
+function updateStatsSummary(stats) {
+    const statsSummary = document.getElementById('statsSummary');
+    let html = '';
+    
+    if (stats.mean !== undefined) {
+        html += `
+            <div class="bg-blue-50 p-4 rounded-lg">
+                <h3 class="font-medium text-blue-800">Moyenne</h3>
+                <p class="text-2xl font-bold mt-1 text-blue-600">${stats.mean.toFixed(2)}</p>
+            </div>
+            <div class="bg-green-50 p-4 rounded-lg">
+                <h3 class="font-medium text-green-800">Médiane</h3>
+                <p class="text-2xl font-bold mt-1 text-green-600">${stats.median.toFixed(2)}</p>
+            </div>
+            <div class="bg-purple-50 p-4 rounded-lg">
+                <h3 class="font-medium text-purple-800">Écart-type</h3>
+                <p class="text-2xl font-bold mt-1 text-purple-600">${stats.std.toFixed(2)}</p>
+            </div>
+        `;
+    } else {
+        html += `
+            <div class="bg-blue-50 p-4 rounded-lg">
+                <h3 class="font-medium text-blue-800">Valeurs uniques</h3>
+                <p class="text-2xl font-bold mt-1 text-blue-600">${stats.unique}</p>
+            </div>
+            <div class="bg-green-50 p-4 rounded-lg">
+                <h3 class="font-medium text-green-800">Valeurs manquantes</h3>
+                <p class="text-2xl font-bold mt-1 text-green-600">${stats.missing}</p>
+            </div>
+            <div class="bg-purple-50 p-4 rounded-lg">
+                <h3 class="font-medium text-purple-800">Valeur la plus fréquente</h3>
+                <p class="text-xl font-bold mt-1 text-purple-600 truncate">${stats.top_value || 'N/A'}</p>
+            </div>
+        `;
+    }
+    
+    statsSummary.innerHTML = html;
+}
+
+// Fonction pour changer le type de graphique
+function changeChartType(type) {
+    if (!currentChartData) return;
+    
+    // Mettre à jour l'état des boutons
+    const buttons = document.querySelectorAll('#chartTypeButtons button');
+    buttons.forEach(btn => {
+        if (btn.textContent.toLowerCase() === type) {
+            btn.classList.remove('bg-gray-100', 'text-gray-800');
+            btn.classList.add('bg-blue-100', 'text-blue-800');
+        } else {
+            btn.classList.remove('bg-blue-100', 'text-blue-800');
+            btn.classList.add('bg-gray-100', 'text-gray-800');
+        }
+    });
+    
+    createChart(currentChartData, type);
+}
+
+// Fonction pour fermer le modal
+function closeModal() {
+    document.getElementById('chartModal').style.display = 'none';
+    if (currentChart) {
+        currentChart.destroy();
+        currentChart = null;
+    }
+    currentChartData = null;
+}
+
+// Fermer le modal si on clique en dehors
+window.onclick = function(event) {
+    const modal = document.getElementById('chartModal');
+    if (event.target == modal) {
+        closeModal();
+    }
+}
+</script>
+{% endblock %}

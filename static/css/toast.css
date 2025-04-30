@@ -1,0 +1,91 @@
+/* Style de base pour les toasts */
+.toast {
+    background-color: #333;
+    color: white;
+    padding: 10px;
+    border-radius: 7px;
+    position: relative;
+    max-width: 350px;
+    width: 100%;
+    margin-bottom: 15px;
+    opacity: 0;
+    transform: translateX(100%);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+    display: flex;
+    align-items: center;
+}
+
+/* Affichage des toasts */
+.toast.show {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+/* Style de success toast */
+.toast.text-bg-success {
+    background-color: #28a745; /* Vert */
+}
+
+.toast.text-bg-danger {
+    background-color: #dc3545; /* Rouge */
+}
+
+.toast.text-bg-warning {
+    background-color: #ffc107; /* Jaune */
+}
+
+/* Style des icônes */
+.toast-body i {
+    font-size: 1.5rem;
+}
+
+/* Pour fermer les toasts */
+.btn-close-white {
+    background-color: transparent;
+    border: none;
+    color: white;
+    font-size: 1.25rem;
+    cursor: pointer;
+}
+
+/* Container global des toasts, positionné en haut à droite */
+.position-fixed {
+    position: fixed;
+    top: 0;
+    right: 0;
+    z-index: 1055;
+}
+
+/* Animation pour l'apparition des toasts */
+.toast.show {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.toast.show {
+    animation: slideIn 0.5s ease-out forwards;
+}
+
+@keyframes slideIn {
+    0% {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+    100% {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Toasts avec délai pour le fond et la couleur */
+.toast.text-bg-success {
+    background-color: #28a745;
+}
+
+.toast.text-bg-danger {
+    background-color: #dc3545;
+}
+
+.toast.text-bg-warning {
+    background-color: #ffc107;
+}
