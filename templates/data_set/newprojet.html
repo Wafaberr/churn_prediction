@@ -1,0 +1,778 @@
+{% extends "layout.html" %}
+
+{% block title %}{{ filename }}{% endblock %}
+
+{% block head_extra %}
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+{% endblock %}
+
+{% block content %}
+<header class="mb-6">
+    <h1 class="text-3xl font-bold mb-4"><span class="text-blue-600">{{ filename }}</span></h1>
+    <div class="search-container flex items-center gap-2">
+        <input type="text" placeholder="Rechercher par nom ou description..." 
+        class="border rounded px-3 py-2 w-full max-w-md" 
+        onkeyup="searchUseCases()">
+          <button onclick="openModal()" class="create-button bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">
+            <i class="fas fa-plus mr-1"></i> Créer un cas d'utilisation
+        </button>
+    </div>
+</header>
+
+<main>
+    <h2 class="text-2xl font-semibold mt-6 mb-2">Créer un nouveau projet basé sur <strong>{{ filename }}</strong></h2>
+    <p class="text-gray-600">Bienvenue sur la page de création de cas d'utilisation pour ce dataset !</p>
+</main>
+  <!-- Ajoutez cette section pour la liste des cas existants -->
+<div class="mt-8">
+    <h3 class="text-xl font-semibold mb-4">Mes cas d'utilisation</h3>
+    <div id="useCasesList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <!-- Les cas seront chargés dynamiquement ici -->
+    </div>
+</div>
+</main>
+
+<!-- Modal de création -->
+<div id="useCaseModal" class="fixed inset-0 bg-black bg-opacity-50 hidden justify-center items-center z-50 p-4">
+    <div class="bg-white p-6 rounded-lg w-full max-w-4xl shadow-lg relative max-h-[90vh] overflow-y-auto">
+        <!-- Étape 1 -->
+        <div id="step1" class="step">
+            <h2 class="text-2xl font-semibold mb-6">Nouveau cas d'utilisation ML</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+                <div onclick="goToStep(2)" class="border rounded-lg p-4 hover:shadow-lg cursor-pointer transition">
+                    <div class="text-4xl mb-2 text-blue-500"><i class="fas fa-file-medical"></i></div>
+                    <h3 class="font-semibold">Créer à partir de zéro</h3>
+                    <p class="text-sm mt-2 text-gray-500">Classification binaire, multiclasse, régression, etc.</p>
+                </div>
+                <div class="border rounded-lg p-4 hover:shadow-lg cursor-pointer transition">
+                    <div class="text-4xl mb-2 text-purple-500"><i class="fas fa-image"></i></div>
+                    <h3 class="font-semibold">Classification d'images</h3>
+                    <p class="text-sm mt-2 text-gray-500">Classer des objets ou motifs dans des images</p>
+                </div>
+                <div class="border rounded-lg p-4 hover:shadow-lg cursor-pointer transition">
+                    <div class="text-4xl mb-2 text-green-500"><i class="fas fa-upload"></i></div>
+                    <h3 class="font-semibold">Utiliser un modèle pré-entraîné</h3>
+                    <p class="text-sm mt-2 text-gray-500">Classification binaire, régression, etc.</p>
+                </div>
+            </div>
+            <div class="flex justify-end mt-6">
+                <button onclick="closeModal()" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded mr-2">Annuler</button>
+                <button onclick="goToStep(2)" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Suivant</button>
+            </div>
+        </div>
+
+        <!-- Étape 2 -->
+        <div id="step2" class="step hidden">
+            <h2 class="text-2xl font-semibold mb-4">Nouveau cas d'utilisation ML à partir de zéro</h2>
+            <div class="flex flex-col md:flex-row gap-6">
+                <div class="w-full md:w-1/4">
+                    <ul class="space-y-4">
+                        <li class="flex items-center gap-2 font-semibold text-blue-600">
+                            <span class="w-6 h-6 flex items-center justify-center rounded-full bg-blue-600 text-white">1</span>
+                            <span>Tâche ML</span>
+                        </li>
+                        <li class="flex items-center gap-2 text-gray-500">
+                            <span class="w-6 h-6 flex items-center justify-center rounded-full border border-gray-400">2</span>
+                            <span>Paramètres cible</span>
+                        </li>
+                        <li class="flex items-center gap-2 text-gray-500">
+                            <span class="w-6 h-6 flex items-center justify-center rounded-full border border-gray-400">3</span>
+                            <span>Détails du cas</span>
+                        </li>
+                    </ul>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="mlTaskOptions">
+                    <div onclick="selectTask(event,'binary')" class="ml-task-option p-4 border rounded-lg cursor-pointer hover:shadow-md transition">
+                        <strong>Classification binaire</strong>
+                        <p class="text-sm text-gray-500 mt-1">Prédire entre deux classes possibles</p>
+                    </div>
+                    <div onclick="selectTask(event,'multi')" class="ml-task-option p-4 border rounded-lg cursor-pointer hover:shadow-md transition">
+                        <strong>Classification multiclasse</strong>
+                        <p class="text-sm text-gray-500 mt-1">Prédire entre plusieurs classes</p>
+                    </div>
+                    <div onclick="selectTask(event,'regression')" class="ml-task-option p-4 border rounded-lg cursor-pointer hover:shadow-md transition">
+                        <strong>Régression</strong>
+                        <p class="text-sm text-gray-500 mt-1">Prédire une valeur numérique continue</p>
+                    </div>
+                    <div onclick="selectTask(event,'clustering')" class="ml-task-option p-4 border rounded-lg cursor-pointer hover:shadow-md transition">
+                        <strong>Clustering</strong>
+                        <p class="text-sm text-gray-500 mt-1">Regrouper des données similaires</p>
+                    </div>
+                </div>
+                
+            </div>
+            <div class="flex justify-between mt-6">
+                <button onclick="goToStep(1)" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded">Retour</button>
+                <button id="step2NextBtn" onclick="goToStep(3)" disabled class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded opacity-50 cursor-not-allowed">Suivant</button>
+            </div>
+        </div>
+
+        <!-- Étape 3 -->
+        <div id="step3" class="step hidden">
+            <h2 class="text-2xl font-semibold mb-4">Paramètres cible</h2>
+            <div class="flex flex-col md:flex-row gap-6">
+                <div class="w-full md:w-1/4">
+                    <ul class="space-y-4">
+                        <li class="flex items-center gap-2 text-gray-500">
+                            <span class="w-6 h-6 flex items-center justify-center rounded-full border border-gray-400">1</span>
+                            <span>Tâche ML</span>
+                        </li>
+                        <li class="flex items-center gap-2 font-semibold text-blue-600">
+                            <span class="w-6 h-6 flex items-center justify-center rounded-full bg-blue-600 text-white">2</span>
+                            <span>Paramètres cible</span>
+                        </li>
+                        <li class="flex items-center gap-2 text-gray-500">
+                            <span class="w-6 h-6 flex items-center justify-center rounded-full border border-gray-400">3</span>
+                            <span>Détails du cas</span>
+                        </li>
+                    </ul>
+                </div>
+                <div class="w-full md:w-3/4 space-y-6">
+                    <div class="mt-8">
+                        <label class="block mb-1 font-medium">Nom de la cible</label>
+                        <select id="targetColumnSelect" onchange="handleTargetColumnChange()" class="w-full border rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">Chargement des colonnes...</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block mb-1 font-medium">Type de transformation</label>
+                        <select class="w-full border rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">Sélectionnez un transformateur</option>
+                            <option value="standard">Standard Scaler</option>
+                            <option value="minmax">MinMax Scaler</option>
+                            <option value="log">Transformation logarithmique</option>
+                        </select>
+                    </div>
+                    <div id="positiveClassContainer" class="mt-4 hidden">
+                        <label class="block mb-1 font-medium">Classe positive</label>
+                        <select id="positiveClassSelect" class="w-full border rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">Sélectionnez la classe positive</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="flex justify-between mt-6">
+                <button onclick="goToStep(2)" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded">Retour</button>
+                <button id="step3NextBtn" onclick="goToStep(4)" disabled class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded opacity-50 cursor-not-allowed">Suivant</button>
+            </div>
+        </div>
+
+        <!-- Étape 4 -->
+        <div id="step4" class="step hidden">
+            <h2 class="text-2xl font-semibold mb-4">Détails du cas d'utilisation</h2>
+            <div class="flex flex-col md:flex-row gap-6">
+                <div class="w-full md:w-1/4">
+                    <ul class="space-y-4">
+                        <li class="flex items-center gap-2 text-gray-500">
+                            <span class="w-6 h-6 flex items-center justify-center rounded-full border border-gray-400">1</span>
+                            <span>Tâche ML</span>
+                        </li>
+                        <li class="flex items-center gap-2 text-gray-500">
+                            <span class="w-6 h-6 flex items-center justify-center rounded-full border border-gray-400">2</span>
+                            <span>Paramètres cible</span>
+                        </li>
+                        <li class="flex items-center gap-2 font-semibold text-blue-600">
+                            <span class="w-6 h-6 flex items-center justify-center rounded-full bg-blue-600 text-white">3</span>
+                            <span>Détails du cas</span>
+                        </li>
+                    </ul>
+                </div>
+                <div class="w-full md:w-3/4 space-y-6">
+                    <div>
+                        <label class="block mb-1 font-medium">Nom du cas d'utilisation</label>
+                        <input type="text" id="usecaseName" class="w-full border rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Entrez le nom du cas d'utilisation">
+                    </div>
+                    <div>
+                        <label class="block mb-1 font-medium">Tag du cas d'utilisation <i class="fas fa-info-circle text-blue-500 ml-1" title="Utilisé pour catégoriser votre projet"></i></label>
+                        <input type="text" id="usecaseTag" class="w-full border rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Entrez un tag">
+                    </div>
+                    <div>
+                        <label class="block mb-1 font-medium">Description</label>
+                        <textarea id="usecaseDescription" class="w-full border rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" rows="4" placeholder="Décrivez votre cas d'utilisation"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="flex justify-between mt-6">
+                <button onclick="goToStep(3)" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded">Retour</button>
+                <button id="createUseCaseBtn" onclick="submitUseCase()" disabled class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded opacity-50 cursor-not-allowed">Créer</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Débogage - vérifier que le bouton est bien capturé
+document.querySelector('.create-button').addEventListener('click', function() {
+    console.log('Bouton cliqué - ouvrir modal');
+    openModal();
+});
+
+// Vérifier que la fonction est accessible
+window.openModal = function() {
+    console.log('Fonction openModal appelée');
+    document.getElementById("useCaseModal").classList.remove("hidden");
+    document.getElementById("useCaseModal").classList.add("flex");
+    goToStep(1);
+};
+    
+
+    function closeModal() {
+        document.getElementById("useCaseModal").classList.add("hidden");
+        document.getElementById("useCaseModal").classList.remove("flex");
+    }
+
+    function goToStep(stepNumber) {
+    // Débogage : affiche la valeur de selectedTask
+    console.log("Navigation vers l'étape", stepNumber, "- Tâche sélectionnée :", selectedTask);
+
+    // Bloque uniquement si on va à l'étape 3 SANS sélection
+    if (stepNumber === 3 && !selectedTask) {
+        alert("Veuillez sélectionner un type de tâche ML d'abord !");
+        return;
+    }
+
+    // Cache toutes les étapes
+    document.querySelectorAll('.step').forEach(step => {
+        step.classList.add('hidden');
+    });
+    
+    // Affiche l'étape demandée
+    document.getElementById(`step${stepNumber}`).classList.remove('hidden');
+}
+
+    // Dans votre JavaScript, remplacez tout le code lié à selectedTask par :
+
+let selectedTask = null; // Déclaration UNIQUE en haut du script
+
+function selectTask(event, task) {
+    // 1. Mettre à jour la variable globale
+    selectedTask = task;
+    console.log("Tâche sélectionnée:", selectedTask);
+    
+    // 2. Mise en évidence visuelle
+    document.querySelectorAll('.ml-task-option').forEach(opt => {
+        opt.classList.remove('border-blue-500', 'bg-blue-50', 'ring-2', 'ring-blue-200');
+    });
+    event.currentTarget.classList.add('border-blue-500', 'bg-blue-50', 'ring-2', 'ring-blue-200');
+    
+    // 3. Gestion spécifique pour la classification binaire
+    const positiveClassContainer = document.getElementById('positiveClassContainer');
+    if (task === 'binary') {
+        positiveClassContainer.classList.remove('hidden');
+    } else {
+        positiveClassContainer.classList.add('hidden');
+    }
+    
+    // 4. Activer le bouton Suivant
+    validateStep2();
+}
+
+function validateStep2() {
+    const btn = document.getElementById('step2NextBtn');
+    const isActive = selectedTask !== null;
+    
+    btn.disabled = !isActive;
+    btn.classList.toggle('opacity-50', !isActive);
+    btn.classList.toggle('cursor-not-allowed', !isActive);
+}
+
+function goToStep(stepNumber) {
+    console.log("Tentative de navigation vers l'étape", stepNumber, "- Tâche sélectionnée:", selectedTask);
+    
+    // Validation spécifique pour l'étape 3
+    if (stepNumber === 3) {
+        if (!selectedTask) {
+            alert("Veuillez sélectionner un type de tâche ML d'abord !");
+            return;
+        }
+        // Charger les colonnes si on va à l'étape 3
+        loadTargetColumns();
+    }
+    
+    // Navigation normale
+    document.querySelectorAll('.step').forEach(step => step.classList.add('hidden'));
+    document.getElementById(`step${stepNumber}`).classList.remove('hidden');
+}
+
+// Initialisation
+document.addEventListener("DOMContentLoaded", function() {
+    validateStep2(); // Désactive "Suivant" au chargement
+    
+    // Écouteur alternatif pour le bouton Suivant
+    document.getElementById('step2NextBtn').addEventListener('click', function(e) {
+        if (!selectedTask) {
+            e.preventDefault();
+            alert("Veuillez sélectionner un type de tâche ML d'abord !");
+        } else {
+            goToStep(3);
+        }
+    });
+});
+async function loadUseCases() {
+    const filename = "{{ filename }}";
+    const container = document.getElementById("useCasesList");
+    
+    try {
+        // Afficher un indicateur de chargement
+        container.innerHTML = '<div class="text-center py-4"><i class="fas fa-spinner fa-spin text-blue-500"></i> Chargement...</div>';
+        
+        const response = await fetch(`/get_use_cases?filename=${encodeURIComponent(filename)}`);
+        
+        if (!response.ok) {
+            throw new Error(`Erreur HTTP: ${response.status}`);
+        }
+        
+        const useCases = await response.json();
+        
+        if (useCases.length > 0) {
+            container.innerHTML = useCases.map(useCase => `
+                <div class="border rounded-lg p-4 hover:shadow-md transition relative group">
+                    <div class="flex justify-between items-start">
+                        <div onclick="navigateToExperiment('${useCase.id}')" class="cursor-pointer flex-grow">
+                            <h4 class="font-semibold">${escapeHtml(useCase.name)}</h4>
+                            <p class="text-sm text-gray-600 mt-1">${escapeHtml(useCase.description || 'Pas de description')}</p>
+                            <div class="mt-2 flex gap-2">
+                                <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">${escapeHtml(useCase.task_type)}</span>
+                                <span class="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded">${useCase.created_at}</span>
+                            </div>
+                        </div>
+                        <div class="relative">
+                            <button class="text-gray-500 hover:text-gray-700 focus:outline-none" onclick="event.stopPropagation(); toggleDropdown('dropdown-${useCase.id}')">
+                                <i class="fas fa-ellipsis-v"></i>
+                            </button>
+                            <div id="dropdown-${useCase.id}" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10 hidden">
+                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" onclick="event.stopPropagation(); openEditModal('${useCase.id}')">
+                                    <i class="fas fa-pen mr-2"></i> Modifier
+                                </a>
+                                <a href="#" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100" 
+                                   onclick="event.stopPropagation(); confirmDelete('${useCase.id}', '${escapeHtml(useCase.name)}')">
+                                    <i class="fas fa-trash mr-2"></i> Supprimer
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        } else {
+            container.innerHTML = '<p class="text-gray-500 text-center py-4">Aucun cas d\'utilisation créé pour ce dataset</p>';
+        }
+    } catch (error) {
+        console.error("Erreur de chargement des cas:", error);
+        container.innerHTML = `
+            <div class="text-red-500 text-center py-4">
+                <p>Erreur de chargement des cas d'utilisation</p>
+                <button onclick="loadUseCases()" class="mt-2 text-blue-500 hover:underline">
+                    <i class="fas fa-sync-alt mr-1"></i> Réessayer
+                </button>
+            </div>
+        `;
+    }
+}
+
+// Fonction utilitaire pour échapper le HTML
+function escapeHtml(unsafe) {
+    if (!unsafe) return '';
+    return unsafe.toString()
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+// Fonction pour afficher/masquer le menu déroulant
+function toggleDropdown(dropdownId) {
+    const dropdown = document.getElementById(dropdownId);
+    dropdown.classList.toggle('hidden');
+    
+    // Fermer les autres menus ouverts
+    document.querySelectorAll('.dropdown-menu').forEach(menu => {
+        if (menu.id !== dropdownId && !menu.classList.contains('hidden')) {
+            menu.classList.add('hidden');
+        }
+    });
+}
+
+async function confirmDelete(useCaseId, useCaseName) {
+    const modal = document.createElement('div');
+    modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50';
+    modal.innerHTML = `
+        <div class="bg-white p-6 rounded-lg w-full max-w-md">
+            <h3 class="text-lg font-semibold mb-4">Confirmation de suppression</h3>
+            <p class="mb-4">Êtes-vous sûr de vouloir supprimer <strong>${escapeHtml(useCaseName)}</strong> ?</p>
+            <div id="deleteError" class="hidden mb-4 p-3 bg-red-100 text-red-700 rounded"></div>
+            <div class="flex justify-end space-x-3">
+                <button id="cancelBtn" class="px-4 py-2 rounded border border-gray-300 hover:bg-gray-50">
+                    Annuler
+                </button>
+                <button id="confirmBtn" class="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700">
+                    Supprimer
+                </button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+
+    const confirmBtn = modal.querySelector('#confirmBtn');
+    const cancelBtn = modal.querySelector('#cancelBtn');
+    const errorDiv = modal.querySelector('#deleteError');
+
+    cancelBtn.addEventListener('click', () => modal.remove());
+
+    confirmBtn.addEventListener('click', async () => {
+        confirmBtn.disabled = true;
+        confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Suppression...';
+        errorDiv.classList.add('hidden');
+
+        try {
+            const response = await fetch(`/delete_usecase?id=${encodeURIComponent(useCaseId)}`, {
+                method: 'DELETE',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                throw new Error(result.error || 'Échec de la suppression');
+            }
+
+            modal.remove();
+            showNotification('Cas supprimé avec succès', 'success');
+            await loadUseCases();
+
+        } catch (error) {
+            console.error('Erreur:', error);
+            errorDiv.textContent = error.message;
+            errorDiv.classList.remove('hidden');
+            confirmBtn.disabled = false;
+            confirmBtn.innerHTML = 'Supprimer';
+        }
+    });
+}
+
+function showNotification(message, type = 'success') {
+    const toast = document.createElement('div');
+    toast.className = `fixed bottom-4 right-4 px-4 py-2 rounded-md text-white ${
+        type === 'success' ? 'bg-green-500' : 'bg-red-500'
+    }`;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+}
+
+// Fonction pour supprimer un cas d'utilisation
+
+
+// Fonction pour ouvrir le modal de modification avec les données existantes
+function openEditModal(useCaseId) {
+    fetch(`/get_usecase_details?id=${useCaseId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                throw new Error(data.error);
+            }
+            
+            // Remplir le formulaire avec les données existantes
+            document.getElementById('usecaseName').value = data.name;
+            document.getElementById('usecaseTag').value = data.tag;
+            document.getElementById('usecaseDescription').value = data.description;
+            
+            // Stocker l'ID du cas à modifier
+            document.getElementById('useCaseModal').dataset.editingId = useCaseId;
+            
+            // Sélectionner automatiquement le type de tâche
+            selectedTask = data.task_type;
+            highlightSelectedTask(data.task_type);
+            
+            // Ouvrir le modal directement à l'étape 4 (détails)
+            openModal();
+            goToStep(4);
+        })
+        .catch(error => {
+            console.error("Erreur:", error);
+            showNotification("Erreur lors du chargement du cas", "error");
+        });
+}
+
+// Fonction pour mettre en évidence la tâche sélectionnée
+function highlightSelectedTask(taskType) {
+    document.querySelectorAll('.ml-task-option').forEach(opt => {
+        opt.classList.remove('border-blue-500', 'bg-blue-50', 'ring-2', 'ring-blue-200');
+        if (opt.textContent.includes(taskTypeMapping[taskType])) {
+            opt.classList.add('border-blue-500', 'bg-blue-50', 'ring-2', 'ring-blue-200');
+        }
+    });
+}
+
+// Mapping des types de tâches
+const taskTypeMapping = {
+    'binary': 'Classification binaire',
+    'multi': 'Classification multiclasse',
+    'regression': 'Régression',
+    'clustering': 'Clustering'
+};
+
+
+function navigateToExperiment(useCaseId) {
+    const filename = "{{ filename }}";
+    window.location.href = `/newexperiment?filename=${encodeURIComponent(filename)}&use_case_id=${useCaseId}`;
+}
+
+// Modifiez la fonction submitUseCase pour gérer à la fois création et modification
+function submitUseCase() {
+    const usecaseName = document.getElementById('usecaseName').value;
+    const usecaseTag = document.getElementById('usecaseTag').value;
+    const usecaseDescription = document.getElementById('usecaseDescription').value;
+    const isEditing = document.getElementById('useCaseModal').dataset.editingId;
+    
+    if (!usecaseName) {
+        alert('Veuillez entrer un nom pour votre cas d\'utilisation');
+        return;
+    }
+    
+    const url = isEditing ? `/update_usecase/${isEditing}` : '/create_usecase';
+    const method = isEditing ? 'PUT' : 'POST';
+    
+    fetch(url, {
+        method: method,
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            usecase_name: usecaseName,
+            usecase_tag: usecaseTag,
+            usecase_description: usecaseDescription,
+            dataset: '{{ filename }}',
+            task_type: selectedTask
+        })
+    })
+    .then(response => {
+        if (response.ok) {
+            loadUseCases();
+            closeModal();
+            showNotification(isEditing ? 'Cas mis à jour avec succès' : 'Cas créé avec succès', 'success');
+            // Réinitialiser l'ID d'édition
+            delete document.getElementById('useCaseModal').dataset.editingId;
+        }
+        return response.json();
+    })
+    .catch(error => {
+        console.error("Erreur:", error);
+        showNotification("Erreur lors de l'enregistrement", "error");
+    });
+}
+// Fonction de recherche
+function searchUseCases() {
+    const searchTerm = document.querySelector('.search-container input').value.toLowerCase();
+    const useCases = document.querySelectorAll('#useCasesList > div');
+    
+    useCases.forEach(useCase => {
+        const name = useCase.querySelector('h4').textContent.toLowerCase();
+        const description = useCase.querySelector('p').textContent.toLowerCase();
+        
+        if (name.includes(searchTerm) || description.includes(searchTerm)) {
+            useCase.style.display = 'block';
+        } else {
+            useCase.style.display = 'none';
+        }
+    });
+}
+
+// Ajoutez l'écouteur d'événement pour le champ de recherche
+document.querySelector('.search-container input').addEventListener('input', searchUseCases);
+
+// Chargez les cas au chargement de la page
+document.addEventListener("DOMContentLoaded", loadUseCases);
+   
+    // Fermer le modal en cliquant à l'extérieur ou avec ESC
+    window.addEventListener('click', function(event) {
+        if (event.target === document.getElementById('useCaseModal')) {
+            closeModal();
+        }
+    });
+
+    window.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+            closeModal();
+        }
+    });
+    document.addEventListener("DOMContentLoaded", function () {
+    const taskOptions = document.querySelectorAll(".ml-task-option");
+
+    taskOptions.forEach(option => {
+        option.addEventListener("click", function () {
+            const selectedTask = this.getAttribute("data-task");
+
+            // Appelle une fonction différente selon le type
+            switch (selectedTask) {
+                case "binary":
+                    handleBinaryClassification();
+                    break;
+                case "multi":
+                    handleMulticlassClassification();
+                    break;
+                case "regression":
+                    handleRegression();
+                    break;
+                case "clustering":
+                    handleClustering();
+                    break;
+                default:
+                    console.log("Type de tâche inconnu :", selectedTask);
+            }
+        });
+    });
+
+    function handleBinaryClassification() {
+        console.log("Lancement de la classification binaire...");
+        // Ici tu peux mettre ton code spécifique pour la classification binaire
+    }
+
+    function handleMulticlassClassification() {
+        console.log("Lancement de la classification multiclasse...");
+        // Code spécifique pour la classification multiclasse
+    }
+
+    function handleRegression() {
+        console.log("Lancement de la régression...");
+        // Code spécifique pour la régression
+    }
+
+    function handleClustering() {
+        console.log("Lancement du clustering...");
+        // Code spécifique pour le clustering
+    }
+});
+
+// Fonction de chargement des colonnes string
+async function loadTargetColumns() {
+    const select = document.getElementById("targetColumnSelect");
+    const filename = "{{ filename }}";
+    select.innerHTML = '<option value="">Chargement...</option>';
+
+    try {
+        const response = await fetch(`/get_string_columns?filename=${encodeURIComponent(filename)}`);
+        const data = await response.json();
+        
+        if (response.ok) {
+            select.innerHTML = '<option value="">-- Sélectionnez une colonne --</option>';
+            
+            if (data.length === 0) {
+                select.innerHTML += '<option value="" disabled>Aucune colonne textuelle trouvée</option>';
+            } else {
+                data.forEach(col => {
+                    const option = document.createElement("option");
+                    option.value = col;
+                    option.textContent = col;
+                    select.appendChild(option);
+                });
+            }
+            
+            // Active la validation après chargement
+            validateStep3();
+        } else {
+            select.innerHTML = `<option value="">Erreur : ${data.error || 'Chargement échoué'}</option>`;
+        }
+    } catch (error) {
+        console.error("Erreur de chargement des colonnes:", error);
+        select.innerHTML = `<option value="">Erreur de connexion</option>`;
+    }
+}
+
+function handleTargetColumnChange() {
+    const columnSelect = document.getElementById("targetColumnSelect");
+    const column = columnSelect.value;
+    const filename = "{{ filename }}";
+    const classSelect = document.getElementById("positiveClassSelect");
+    const container = document.getElementById("positiveClassContainer");
+
+    if (!column) {
+        container.classList.add("hidden");
+        validateStep3();
+        return;
+    }
+
+    classSelect.innerHTML = '<option value="">Chargement...</option>';
+    
+    fetch(`/get_column_values?filename=${encodeURIComponent(filename)}&column=${encodeURIComponent(column)}`)
+        .then(response => response.json())
+        .then(values => {
+            if (values.error) {
+                throw new Error(values.error);
+            }
+            
+            classSelect.innerHTML = '<option value="">Sélectionnez la classe positive</option>';
+            values.forEach(v => {
+                const option = document.createElement("option");
+                option.value = v;
+                option.textContent = v;
+                classSelect.appendChild(option);
+            });
+            
+            container.classList.remove("hidden");
+            validateStep3();
+        })
+        .catch(err => {
+            console.error("Erreur:", err);
+            classSelect.innerHTML = '<option value="">Erreur de chargement</option>';
+            container.classList.add("hidden");
+        });
+}
+
+
+document.addEventListener("DOMContentLoaded", () => {
+    loadTargetColumns();
+});
+
+    // Validation des champs de l'étape 3
+    function validateStep3() {
+    // 1. Récupère les valeurs des champs
+    const targetColumn = document.getElementById('targetColumnSelect').value;
+    const transformer = document.querySelector('#step3 select:nth-of-type(1)').value; // Correction ici
+    const positiveClass = document.getElementById('positiveClassSelect')?.value || null;
+
+    // 2. Validation conditionnelle
+    let isValid = targetColumn && transformer;
+    if (selectedTask === 'binary') {
+        isValid = isValid && positiveClass;
+    }
+
+    // 3. Active/désactive le bouton
+    const btn = document.getElementById('step3NextBtn');
+    btn.disabled = !isValid;
+    btn.classList.toggle('opacity-50', !isValid);
+    btn.classList.toggle('cursor-not-allowed', !isValid);
+    
+    console.log("Validation étape 3 :", { targetColumn, transformer, positiveClass, isValid }); // Débogage
+}
+
+   // Écouteurs pour déclencher la validation
+document.getElementById('targetColumnSelect').addEventListener('change', validateStep3);
+document.querySelector('#step3 select:nth-of-type(1)').addEventListener('change', validateStep3); // Sélecteur corrigé
+document.getElementById('positiveClassSelect')?.addEventListener('change', validateStep3);
+    
+    function validateStep4() {
+        const name = document.getElementById('usecaseName').value.trim();
+        const tag = document.getElementById('usecaseTag').value.trim();
+        const desc = document.getElementById('usecaseDescription').value.trim();
+
+        const isValid = name && tag && desc;
+
+        const btn = document.getElementById('createUseCaseBtn');
+        btn.disabled = !isValid;
+        btn.classList.toggle('opacity-50', !isValid);
+        btn.classList.toggle('cursor-not-allowed', !isValid);
+    }
+
+    document.getElementById('usecaseName').addEventListener('input', validateStep4);
+    document.getElementById('usecaseTag').addEventListener('input', validateStep4);
+    document.getElementById('usecaseDescription').addEventListener('input', validateStep4);
+ 
+</script>
+
+{% endblock %}

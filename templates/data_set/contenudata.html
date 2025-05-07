@@ -5,7 +5,7 @@
 {% block head_extra %}
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
 {% endblock %}
 
 {% block content %}
@@ -44,7 +44,7 @@
                 {% for file in files %}
                 <li class="py-3 hover:bg-gray-50 px-2 rounded-lg transition-colors dataset-item">
                     <div class="flex items-center justify-between">
-                        <a href="{{ url_for('statisticdataset', filename=file) }}" 
+                        <a href="{{ url_for('data_set.statisticdataset', filename=file) }}" 
    class="flex items-center gap-3 text-blue-600 hover:text-blue-800 hover:underline">
     <i class="fas {{ 'fa-file-excel text-green-600' if file.split('.').pop() in ['xls', 'xlsx'] else 'fa-file-csv text-gray-400' }}"></i>
     <span class="dataset-name">{{ file }}</span>
@@ -71,7 +71,7 @@
                                         class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100">
                                     <i class="fas fa-trash-alt mr-2"></i>Delete
                                 </button>
-                                <a href="{{ url_for('newprojet', filename=file) }}" 
+                                <a href="{{ url_for('data_set.newprojet', filename=file) }}" 
                                     class="block w-full text-left px-4 py-2 text-sm text-blue-600 hover:bg-gray-100 hover:underline">
                                     <i class="fas fa-project-diagram mr-2"></i>New Project
                                 </a>
@@ -151,7 +151,7 @@
             const formData = new FormData();
             formData.append('dataset', file);
             
-            const response = await fetch('/upload', {
+            const response = await fetch('/data_set/upload', {
                 method: 'POST',
                 body: formData
             });

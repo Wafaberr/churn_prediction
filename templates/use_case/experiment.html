@@ -1,0 +1,1748 @@
+{% extends "layout.html" %}
+{% block head_extra %}
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dataset Statistics</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='expirement.css') }}">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+  <!-- Ajoutez ce div pour afficher les infos du dataset -->
+
+
+
+  <!-- Boutons glissants existants... -->
+  <div class="sliding-tabs-container">
+    <div class="sliding-tabs">
+      <div class="slider-indicator"></div>
+      <button class="sliding-tab active" data-tab="features" onclick="switchTab('features')">
+        <i data-feather="sliders"></i>
+        <span>Features</span>
+      </button>
+      <button class="sliding-tab" data-tab="dimension-reduction" onclick="switchTab('dimension-reduction')">
+        <i data-feather="minimize-2"></i>
+        <span>Dimension Reduction</span>
+      </button>
+      <button class="sliding-tab" data-tab="models" onclick="switchTab('models')">
+        <i data-feather="cpu"></i>
+        <span>Models</span>
+      </button>
+      <button class="sliding-tab" data-tab="evaluation" onclick="switchTab('evaluation')">
+        <i data-feather="check-circle"></i>
+        <span>Evaluation</span>
+      </button>
+      <button class="sliding-tab" data-tab="data-augmentation" onclick="switchTab('data-augmentation')">
+        <i data-feather="copy"></i>
+        <span>Data Augmentation</span>
+      </button>
+      <button class="sliding-tab" data-tab="hyperparameters" onclick="switchTab('hyperparameters')">
+        <i data-feather="settings"></i>
+        <span>Hyperparameters</span>
+      </button>
+    </div>
+  </div>
+    <!-- Bouton Run Expérience -->
+  <div class="run-experiment-container">
+    <button id="run-experiment-btn" class="run-experiment-btn">
+      <i class="fas fa-play-circle mr-2"></i> Run Expérience
+    </button>
+  </div>
+</div>
+  <!-- Contenu des onglets -->
+  <div class="tab-content">
+    <div id="features-content" class="tab-pane active">
+        <h3>Features Management</h3>
+        
+        <div class="feature-actions">
+          <button id="select-all-features-btn" class="btn btn-outline-primary">
+              <i class="fas fa-check-square"></i> Select All
+          </button>
+      </div>
+      
+      <div class="feature-table-container">
+          <table class="feature-table">
+              <thead>
+                  <tr>
+                      <th>Select</th>
+                      <th>Feature</th>
+                      <th>Status</th>
+                      <th>Type</th>
+                      <th>Meaning</th>
+                      <th >Imputation</th>
+                      <th >Transformer</th>
+                  </tr>
+              </thead>
+              <tbody id="features-tbody">
+                <!-- Les lignes seront ajoutées dynamiquement ici -->
+            </tbody>
+            
+           
+          </table>
+        </div>
+      </div>
+      <div id="dimension-reduction-content" class="tab-pane p-4 bg-white rounded shadow">
+        <h3 class="text-xl font-semibold mb-4">Dimension Reduction</h3>
+  <!-- Modifiez la section Feature Selection comme ceci -->
+<div class="mb-6">
+  <h4 class="font-medium text-gray-800 mb-2">Feature Selection</h4>
+  <p class="text-sm text-gray-600 mb-2">Apply to selected features:</p>
+
+  <div class="space-y-2">
+    <div class="flex items-center justify-between">
+      <span>Remove features containing missing data</span>
+      <label class="switch">
+        <input type="checkbox" class="feature-selection-switch" data-target="missing">
+        <span class="slider round"></span>
+      </label>
+    </div>
+    
+    <div class="flex items-center justify-between">
+      <span>Remove features containing single value</span>
+      <label class="switch">
+        <input type="checkbox" class="feature-selection-switch" data-target="single-value">
+        <span class="slider round"></span>
+      </label>
+    </div>
+    
+    <div class="flex items-center justify-between">
+      <span>Remove colinear features</span>
+      <label class="switch">
+        <input type="checkbox" class="feature-selection-switch" data-target="colinear">
+        <span class="slider round"></span>
+      </label>
+    </div>
+    
+    <div class="flex items-center justify-between">
+      <span>Remove features with zero importance</span>
+      <label class="switch">
+        <input type="checkbox" class="feature-selection-switch" data-target="zero-importance">
+        <span class="slider round"></span>
+      </label>
+    </div>
+    
+    <div class="flex items-center justify-between">
+      <span>Remove features with low importance</span>
+      <label class="switch">
+        <input type="checkbox" class="feature-selection-switch" data-target="low-importance">
+        <span class="slider round"></span>
+      </label>
+    </div>
+  </div>
+</div>
+
+<!-- Modifiez la section PCA comme ceci -->
+<div class="mb-6">
+  <div class="flex items-center justify-between mb-2">
+    <h4 class="font-medium text-gray-800">PCA</h4>
+    <label class="switch">
+      <input type="checkbox" class="pca-enable" id="pca-enable" checked>
+      <span class="slider round"></span>
+    </label>
+  </div>
+  
+  <div id="pca-options" class="pl-4">
+    <label class="block font-medium text-gray-700 mb-1">Select mode</label>
+    <select class="w-full p-2 border border-gray-300 rounded mb-2">
+      <option>Target variance</option>
+      <option>Number of components</option>
+    </select>
+
+    <div class="flex items-center justify-between mb-1">
+      <label for="target-variance" class="font-medium text-gray-700">Target variance</label>
+      <span id="variance-value" class="text-sm font-mono bg-gray-100 px-2 py-1 rounded">0.80</span>
+    </div>
+    <input type="range" min="0" max="1" step="0.01" value="0.8" 
+           id="target-variance" class="w-full mb-2">
+  </div>
+</div>
+        <!-- Dans la section dimension-reduction-content, modifiez le bloc Random State comme suit : -->
+<div class="mb-6">
+  <label for="random-state" class="block font-medium text-gray-700 mb-2">Random State</label>
+  <div class="flex items-center space-x-2">
+    <input type="number" id="random-state" value="5" class="w-full p-2 border border-gray-300 rounded">
+    <button id="reset-dimension-btn" class="px-4 py-2 text-blue-600 border border-blue-500 rounded hover:bg-blue-100">
+      <i class="fas fa-undo"></i> Reset
+    </button>
+    <button id="save-dimension-btn" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+      <i class="fas fa-save"></i> Save
+    </button>
+  </div>
+  <p class="text-sm text-gray-500 mt-1">Random State for reproducing same experiments.</p>
+</div>
+      </div>
+      
+      <div id="models-content" class="tab-pane">
+        <h2 class="section-title">Machine Learning Models</h2>
+        
+        <div class="model-actions">
+            <button id="select-all-btn" class="btn btn-outline-primary">Select All</button>
+            <button id="deselect-all-btn" class="btn btn-outline-secondary">Deselect All</button>
+            <button id="compare-btn" class="btn btn-primary">Compare Selected Models</button>
+        </div>
+        
+        <div class="model-container">
+            
+            <!-- AdaBoost -->
+            <div class="model-card" data-model="adaboost">
+                <div class="model-header">
+                    <div>
+                        <input type="checkbox" class="model-checkbox" id="adaboost-check">
+                        <h3>AdaBoost</h3>
+                    </div>
+                    <span class="model-badge">Ensemble</span>
+                </div>
+                <p class="model-description">AdaBoost is an estimator that learns successive weak estimators with a boosting method applied on the data.</p>
+                
+                <div class="parameters-section">
+                    <h4>Parameters</h4>
+                    
+                    <div class="parameter-group">
+                        <label>Base estimator</label>
+                        <select class="form-control">
+                            <option>Decision Tree</option>
+                            <option>Linear Model</option>
+                        </select>
+                    </div>
+                    
+                    <div class="parameter-group">
+                        <label>Number of estimators</label>
+                        <input type="number" class="form-control" value="50">
+                    </div>
+                    
+                    <div class="parameter-group">
+                        <label>Learning rate</label>
+                        <input type="number" step="0.01" class="form-control" value="1.0">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Random Forest -->
+            <div class="model-card" data-model="randomforest">
+                <div class="model-header">
+                    <div>
+                        <input type="checkbox" class="model-checkbox" id="randomforest-check">
+                        <h3>Random Forest</h3>
+                    </div>
+                    <span class="model-badge">Ensemble</span>
+                </div>
+                <p class="model-description">A meta estimator that fits a number of decision tree classifiers on various sub-samples of the dataset.</p>
+                
+                <div class="parameters-section">
+                    <h4>Parameters</h4>
+                    
+                    <div class="parameter-group">
+                        <label>Number of estimators</label>
+                        <input type="number" class="form-control" value="100">
+                    </div>
+                    
+                    <div class="parameter-group">
+                        <label>Max depth</label>
+                        <input type="number" class="form-control" placeholder="None">
+                    </div>
+                    
+                    <div class="parameter-group">
+                        <label>Min samples leaf</label>
+                        <input type="number" class="form-control" value="1">
+                    </div>
+                    
+                    <div class="parameter-group">
+                        <label>Bootstrap</label>
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" checked>
+                            <label class="form-check-label">On</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Decision Tree -->
+            <div class="model-card" data-model="decisiontree">
+                <div class="model-header">
+                    <div>
+                        <input type="checkbox" class="model-checkbox" id="decisiontree-check">
+                        <h3>Decision Tree</h3>
+                    </div>
+                    <span class="model-badge">Tree-based</span>
+                </div>
+                
+                <div class="parameters-section">
+                    <h4>Parameters</h4>
+                    
+                    <div class="parameter-group">
+                        <label>Criterion</label>
+                        <select class="form-control">
+                            <option>Gini</option>
+                            <option>Entropy</option>
+                        </select>
+                    </div>
+                    
+                    <div class="parameter-group">
+                        <label>Max depth</label>
+                        <input type="number" class="form-control" placeholder="None">
+                    </div>
+                    
+                    <div class="parameter-group">
+                        <label>Min samples split</label>
+                        <input type="number" class="form-control" value="2">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- KNN -->
+            <div class="model-card" data-model="knn">
+                <div class="model-header">
+                    <div>
+                        <input type="checkbox" class="model-checkbox" id="knn-check">
+                        <h3>K-Nearest Neighbors</h3>
+                    </div>
+                    <span class="model-badge">Instance-based</span>
+                </div>
+                
+                <div class="parameters-section">
+                    <h4>Parameters</h4>
+                    
+                    <div class="parameter-group">
+                        <label>Number of neighbors</label>
+                        <input type="number" class="form-control" value="5">
+                    </div>
+                    
+                    <div class="parameter-group">
+                        <label>Weights</label>
+                        <select class="form-control">
+                            <option>Uniform</option>
+                            <option>Distance</option>
+                        </select>
+                    </div>
+                    
+                    <div class="parameter-group">
+                        <label>Algorithm</label>
+                        <select class="form-control">
+                            <option>Auto</option>
+                            <option>Ball Tree</option>
+                            <option>KD Tree</option>
+                            <option>Brute Force</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- SVM -->
+            <div class="model-card" data-model="svm">
+                <div class="model-header">
+                    <div>
+                        <input type="checkbox" class="model-checkbox" id="svm-check">
+                        <h3>Support Vector Machine</h3>
+                    </div>
+                    <span class="model-badge">Kernel-based</span>
+                </div>
+                
+                <div class="parameters-section">
+                    <h4>Parameters</h4>
+                    
+                    <div class="parameter-group">
+                        <label>Kernel</label>
+                        <select class="form-control">
+                            <option>Linear</option>
+                            <option>RBF</option>
+                            <option>Poly</option>
+                            <option>Sigmoid</option>
+                        </select>
+                    </div>
+                    
+                    <div class="parameter-group">
+                        <label>C parameter</label>
+                        <input type="number" step="0.1" class="form-control" value="1.0">
+                    </div>
+                    
+                    <div class="parameter-group">
+                        <label>Gamma</label>
+                        <select class="form-control">
+                            <option>Scale</option>
+                            <option>Auto</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- XGBoost -->
+            <div class="model-card" data-model="xgboost">
+                <div class="model-header">
+                    <div>
+                        <input type="checkbox" class="model-checkbox" id="xgboost-check">
+                        <h3>XGBoost</h3>
+                    </div>
+                    <span class="model-badge">Ensemble</span>
+                </div>
+                
+                <div class="parameters-section">
+                    <h4>Parameters</h4>
+                    
+                    <div class="parameter-group">
+                        <label>Number of estimators</label>
+                        <input type="number" class="form-control" value="100">
+                    </div>
+                    
+                    <div class="parameter-group">
+                        <label>Learning rate</label>
+                        <input type="number" step="0.01" class="form-control" value="0.3">
+                    </div>
+                    
+                    <div class="parameter-group">
+                        <label>Max depth</label>
+                        <input type="number" class="form-control" value="6">
+                    </div>
+                    
+                    <div class="parameter-group">
+                        <label>Subsample</label>
+                        <input type="number" step="0.1" class="form-control" value="1.0">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- LightGBM -->
+            <div class="model-card" data-model="lightgbm">
+                <div class="model-header">
+                    <div>
+                        <input type="checkbox" class="model-checkbox" id="lightgbm-check">
+                        <h3>LightGBM</h3>
+                    </div>
+                    <span class="model-badge">Ensemble</span>
+                </div>
+                
+                <div class="parameters-section">
+                    <h4>Parameters</h4>
+                    
+                    <div class="parameter-group">
+                        <label>Number of estimators</label>
+                        <input type="number" class="form-control" value="100">
+                    </div>
+                    
+                    <div class="parameter-group">
+                        <label>Learning rate</label>
+                        <input type="number" step="0.01" class="form-control" value="0.1">
+                    </div>
+                    
+                    <div class="parameter-group">
+                        <label>Max depth</label>
+                        <input type="number" class="form-control" value="-1">
+                    </div>
+                    
+                    <div class="parameter-group">
+                        <label>Feature fraction</label>
+                        <input type="number" step="0.1" class="form-control" value="1.0">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Gradient Boosting -->
+            <div class="model-card" data-model="gradientboosting">
+                <div class="model-header">
+                    <div>
+                        <input type="checkbox" class="model-checkbox" id="gradientboosting-check">
+                        <h3>Gradient Boosting</h3>
+                    </div>
+                    <span class="model-badge">Ensemble</span>
+                </div>
+                
+                <div class="parameters-section">
+                    <h4>Parameters</h4>
+                    
+                    <div class="parameter-group">
+                        <label>Number of estimators</label>
+                        <input type="number" class="form-control" value="100">
+                    </div>
+                    
+                    <div class="parameter-group">
+                        <label>Learning rate</label>
+                        <input type="number" step="0.01" class="form-control" value="0.1">
+                    </div>
+                    
+                    <div class="parameter-group">
+                        <label>Max depth</label>
+                        <input type="number" class="form-control" value="3">
+                    </div>
+                    
+                    <div class="parameter-group">
+                        <label>Subsample</label>
+                        <input type="number" step="0.1" class="form-control" value="1.0">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Logistic Regression -->
+            <div class="model-card" data-model="logistic">
+                <div class="model-header">
+                    <div>
+                        <input type="checkbox" class="model-checkbox" id="logistic-check">
+                        <h3>Logistic Regression</h3>
+                    </div>
+                    <span class="model-badge">Linear</span>
+                </div>
+                
+                <div class="parameters-section">
+                    <h4>Parameters</h4>
+                    
+                    <div class="parameter-group">
+                        <label>Penalty</label>
+                        <select class="form-control">
+                            <option>L2</option>
+                            <option>L1</option>
+                            <option>Elasticnet</option>
+                            <option>None</option>
+                        </select>
+                    </div>
+                    
+                    <div class="parameter-group">
+                        <label>C parameter</label>
+                        <input type="number" step="0.1" class="form-control" value="1.0">
+                    </div>
+                    
+                    <div class="parameter-group">
+                        <label>Solver</label>
+                        <select class="form-control">
+                            <option>lbfgs</option>
+                            <option>newton-cg</option>
+                            <option>liblinear</option>
+                            <option>sag</option>
+                            <option>saga</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- CNN -->
+            <div class="model-card" data-model="cnn">
+                <div class="model-header">
+                    <div>
+                        <input type="checkbox" class="model-checkbox" id="cnn-check">
+                        <h3>Convolutional Neural Network</h3>
+                    </div>
+                    <span class="model-badge">Deep Learning</span>
+                </div>
+                
+                <div class="parameters-section">
+                    <h4>Parameters</h4>
+                    
+                    <div class="parameter-group">
+                        <label>Number of layers</label>
+                        <input type="number" class="form-control" value="3">
+                    </div>
+                    
+                    <div class="parameter-group">
+                        <label>Filters</label>
+                        <input type="text" class="form-control" value="32, 64, 128" placeholder="Comma separated values">
+                    </div>
+                    
+                    <div class="parameter-group">
+                        <label>Kernel size</label>
+                        <input type="text" class="form-control" value="3, 3, 3" placeholder="Comma separated values">
+                    </div>
+                    
+                    <div class="parameter-group">
+                        <label>Learning rate</label>
+                        <input type="number" step="0.0001" class="form-control" value="0.001">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- RNN -->
+            <div class="model-card" data-model="rnn">
+                <div class="model-header">
+                    <div>
+                        <input type="checkbox" class="model-checkbox" id="rnn-check">
+                        <h3>Recurrent Neural Network</h3>
+                    </div>
+                    <span class="model-badge">Deep Learning</span>
+                </div>
+                
+                <div class="parameters-section">
+                    <h4>Parameters</h4>
+                    
+                    <div class="parameter-group">
+                        <label>Units</label>
+                        <input type="number" class="form-control" value="64">
+                    </div>
+                    
+                    <div class="parameter-group">
+                        <label>Number of layers</label>
+                        <input type="number" class="form-control" value="2">
+                    </div>
+                    
+                    <div class="parameter-group">
+                        <label>Dropout</label>
+                        <input type="number" step="0.1" class="form-control" value="0.2">
+                    </div>
+                    
+                    <div class="parameter-group">
+                        <label>Learning rate</label>
+                        <input type="number" step="0.0001" class="form-control" value="0.001">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- LSTM -->
+            <div class="model-card" data-model="lstm">
+                <div class="model-header">
+                    <div>
+                        <input type="checkbox" class="model-checkbox" id="lstm-check">
+                        <h3>LSTM</h3>
+                    </div>
+                    <span class="model-badge">Deep Learning</span>
+                </div>
+                
+                <div class="parameters-section">
+                    <h4>Parameters</h4>
+                    
+                    <div class="parameter-group">
+                        <label>Units</label>
+                        <input type="number" class="form-control" value="128">
+                    </div>
+                    
+                    <div class="parameter-group">
+                        <label>Number of layers</label>
+                        <input type="number" class="form-control" value="1">
+                    </div>
+                    
+                    <div class="parameter-group">
+                        <label>Dropout</label>
+                        <input type="number" step="0.1" class="form-control" value="0.2">
+                    </div>
+                    
+                    <div class="parameter-group">
+                        <label>Learning rate</label>
+                        <input type="number" step="0.0001" class="form-control" value="0.001">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- GRU -->
+            <div class="model-card" data-model="gru">
+                <div class="model-header">
+                    <div>
+                        <input type="checkbox" class="model-checkbox" id="gru-check">
+                        <h3>GRU</h3>
+                    </div>
+                    <span class="model-badge">Deep Learning</span>
+                </div>
+                
+                <div class="parameters-section">
+                    <h4>Parameters</h4>
+                    
+                    <div class="parameter-group">
+                        <label>Units</label>
+                        <input type="number" class="form-control" value="128">
+                    </div>
+                    
+                    <div class="parameter-group">
+                        <label>Number of layers</label>
+                        <input type="number" class="form-control" value="1">
+                    </div>
+                    
+                    <div class="parameter-group">
+                        <label>Dropout</label>
+                        <input type="number" step="0.1" class="form-control" value="0.2">
+                    </div>
+                    
+                    <div class="parameter-group">
+                        <label>Learning rate</label>
+                        <input type="number" step="0.0001" class="form-control" value="0.001">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- MLP -->
+            <div class="model-card" data-model="mlp">
+                <div class="model-header">
+                    <div>
+                        <input type="checkbox" class="model-checkbox" id="mlp-check">
+                        <h3>Multilayer Perceptron</h3>
+                    </div>
+                    <span class="model-badge">Deep Learning</span>
+                </div>
+                
+                <div class="parameters-section">
+                    <h4>Parameters</h4>
+                    
+                    <div class="parameter-group">
+                        <label>Hidden layers</label>
+                        <input type="text" class="form-control" value="100, 50" placeholder="Comma separated values">
+                    </div>
+                    
+                    <div class="parameter-group">
+                        <label>Activation</label>
+                        <select class="form-control">
+                            <option>ReLU</option>
+                            <option>Sigmoid</option>
+                            <option>Tanh</option>
+                        </select>
+                    </div>
+                    
+                    <div class="parameter-group">
+                        <label>Learning rate</label>
+                        <input type="number" step="0.0001" class="form-control" value="0.001">
+                    </div>
+                    
+                    <div class="parameter-group">
+                        <label>Batch size</label>
+                        <input type="number" class="form-control" value="32">
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+
+    <div id="evaluation-content" class="tab-pane">
+      <div class="evaluation-container">
+        <!-- Test Split Section -->
+        <div class="section-card">
+          <div class="section-header">
+            <h3 class="section-title">Test split</h3>
+            <div class="section-tooltip">
+              <i class="info-icon">i</i>
+              <span class="tooltip-text">Define how the test set is held out for final model evaluation</span>
+            </div>
+          </div>
+          
+          <div class="section-content">
+            <div class="parameter-group">
+              <div class="parameter-header">
+                <h4 class="parameter-title">Test set ratio</h4>
+                <span class="parameter-value">0.1</span>
+              </div>
+              <div class="slider-container">
+                <input type="range" min="0" max="100" value="10" class="slider" id="testSetRatio">
+                <div class="slider-labels">
+                  <span>0</span>
+                  <span>0.1</span>
+                  <span>1</span>
+                </div>
+              </div>
+              <p class="parameter-description">Percentage of data reserved for the test set (used for final model evaluation)</p>
+            </div>
+          </div>
+        </div>
+    
+        <!-- Hyperparameters Search Validation Split Section -->
+        <div class="section-card">
+          <div class="section-header">
+            <h3 class="section-title">Hyperparameters search validation split</h3>
+            <div class="section-tooltip">
+              <i class="info-icon">i</i>
+              <span class="tooltip-text">Define how the train set is split to extract a validation set for hyperparameter tuning</span>
+            </div>
+          </div>
+          
+          <div class="section-content">
+            <div class="parameter-group">
+              <h4 class="parameter-title">Method</h4>
+              <div class="method-selector">
+                <div class="method-option selected">
+                  <i class="method-icon shuffle-icon"></i>
+                  Shuffle and Split
+                </div>
+                <div class="method-option">
+                  <i class="method-icon kfold-icon"></i>
+                  K-Fold CV
+                </div>
+              </div>
+            </div>
+    
+            <div class="parameter-group">
+              <div class="parameter-header">
+                <h4 class="parameter-title">Validation set ratio</h4>
+                <span class="parameter-value">0.1</span>
+              </div>
+              <div class="slider-container">
+                <input type="range" min="0" max="100" value="10" class="slider" id="validationSetRatio">
+                <div class="slider-labels">
+                  <span>0</span>
+                  <span>0.1</span>
+                  <span>1</span>
+                </div>
+              </div>
+              <p class="parameter-description">Percentage of training data used for validation during hyperparameter search</p>
+            </div>
+    
+            <div class="options-group">
+              <div class="checkbox-group">
+                <label class="checkbox-option">
+                  <input type="checkbox">
+                  <span class="custom-checkbox"></span>
+                  <span class="option-label">Balanced</span>
+                </label>
+                <p class="option-description">Maintain original class distribution in all splits</p>
+              </div>
+    
+              <div class="checkbox-group">
+                <label class="checkbox-option">
+                  <input type="checkbox" checked>
+                  <span class="custom-checkbox"></span>
+                  <span class="option-label">Shuffle</span>
+                </label>
+                <p class="option-description">Randomize data order before splitting</p>
+              </div>
+            </div>
+    
+            <div class="actions-bar">
+              <button class="btn btn-secondary">
+                <i class="btn-icon reset-icon"></i>
+                Reset to defaults
+              </button>
+              <button class="btn btn-primary">
+                <i class="btn-icon save-icon"></i>
+                Save configuration
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div id="data-augmentation-content" class="tab-pane">
+      <h3><i class="fas fa-expand-arrows-alt"></i> Data Augmentation Techniques</h3>
+      
+      <div class="augmentation-container">
+        <!-- Section Oversampling -->
+        <div class="augmentation-section">
+          <h4><i class="fas fa-copy"></i> Oversampling Methods</h4>
+          <div class="method-grid">
+            <div class="method-card" data-method="random">
+              <i class="fas fa-random"></i>
+              <span>Random Over-sampling</span>
+            </div>
+            
+            <div class="method-card" data-method="smote">
+              <i class="fas fa-project-diagram"></i>
+              <span>SMOTE</span>
+            </div>
+            
+            <div class="method-card" data-method="adasyn">
+              <i class="fas fa-adjust"></i>
+              <span>ADASYN</span>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Section Borderline -->
+        <div class="augmentation-section">
+          <h4><i class="fas fa-border-style"></i> Borderline Methods</h4>
+          <div class="method-grid">
+            <div class="method-card" data-method="borderline-smote">
+              <i class="fas fa-border-none"></i>
+              <span>Borderline SMOTE</span>
+            </div>
+            
+            <div class="method-card" data-method="swim-maha">
+              <i class="fas fa-swimming-pool"></i>
+              <span>SWIM Maha</span>
+            </div>
+            
+            <div class="method-card" data-method="swim-rbf">
+              <i class="fas fa-wave-square"></i>
+              <span>SWIM RBF</span>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Section Special -->
+        <div class="augmentation-section">
+          <h4><i class="fas fa-star"></i> Special Methods</h4>
+          <div class="method-grid">
+            <div class="method-card" data-method="smotenc">
+              <i class="fas fa-asterisk"></i>
+              <span>SMOTENC</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="model-selection">
+        <button id="select-model-btn" class="btn btn-primary">
+          <i class="fas fa-check-circle"></i> Select Model
+        </button>
+      </div>
+    </div>
+    <div id="hyperparameters-content" class="tab-pane">
+      <div class="section-header">
+        <h2><i class="fas fa-sliders-h"></i> Hyperparameters Tuning</h2>
+        <p class="section-description">Optimize your model performance by adjusting these parameters</p>
+      </div>
+      
+      <div class="hyperparameters-section card">
+        <!-- Strategy Method -->
+        <div class="parameter-group strategy-method">
+          <div class="parameter-header">
+            <i class="fas fa-tasks parameter-icon"></i>
+            <h3>Strategy Method</h3>
+            <div class="info-tooltip" data-tooltip="Select the optimization algorithm">
+              <i class="fas fa-info-circle"></i>
+            </div>
+          </div>
+          
+          <div class="dropdown custom-select">
+            <button class="dropdown-toggle">
+              <span class="selected-value"><i class="fas fa-th"></i> Grid Search</span>
+              <span class="arrow"><i class="fas fa-chevron-down"></i></span>
+            </button>
+            <ul class="dropdown-menu">
+              <li data-value="grid-search">
+                <i class="fas fa-th"></i> Grid Search
+                <span class="method-description">Exhaustive search over specified values</span>
+              </li>
+              <li data-value="tree-structured">
+                <i class="fas fa-project-diagram"></i> Tree-structured Parzen Estimator
+                <span class="method-description">Bayesian optimization for hyperparameters</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+        
+        <!-- Grid Search Parameters -->
+        <div class="parameter-group grid-search-params card-inset">
+          <div class="parameter-header">
+            <i class="fas fa-search parameter-icon"></i>
+            <h4>Grid Search Configuration</h4>
+          </div>
+          <p class="parameter-description">Strategy to use for hyperparameters optimization.</p>
+          
+          <!-- Evaluation Metric -->
+          <div class="parameter-item evaluation-metric">
+            <div class="parameter-subheader">
+              <h5><i class="fas fa-chart-line"></i> Evaluation Metric</h5>
+              <div class="info-tooltip" data-tooltip="Metric used to evaluate model performance">
+                <i class="fas fa-info-circle"></i>
+              </div>
+            </div>
+            <div class="dropdown custom-select">
+              <button class="dropdown-toggle">
+                <span class="selected-value"><i class="fas fa-check-circle"></i> Accuracy</span>
+                <span class="arrow"><i class="fas fa-chevron-down"></i></span>
+              </button>
+              <ul class="dropdown-menu">
+                <li data-value="auc"><i class="fas fa-area-chart"></i> AUC</li>
+                <li data-value="precision"><i class="fas fa-bullseye"></i> Precision</li>
+                <li data-value="accuracy"><i class="fas fa-check-circle"></i> Accuracy</li>
+                <li data-value="recall"><i class="fas fa-redo"></i> Recall</li>
+                <li data-value="f1"><i class="fas fa-percentage"></i> F1 Score</li>
+              </ul>
+            </div>
+          </div>
+          
+          <!-- Time Limit -->
+          <div class="parameter-item time-limit">
+            <div class="parameter-subheader">
+              <h5><i class="fas fa-clock"></i> Time Limit</h5>
+              <div class="info-tooltip" data-tooltip="Maximum optimization time in seconds">
+                <i class="fas fa-info-circle"></i>
+              </div>
+            </div>
+            <div class="input-with-tag">
+              <input type="number" value="3600" class="form-control">
+              <span class="input-tag">seconds</span>
+            </div>
+            <p class="parameter-description">Maximum time to search hyperparameters. Set to -1 for no limit.</p>
+          </div>
+          
+          <!-- Max Combinations -->
+          <div class="parameter-item max-combinations">
+            <div class="parameter-subheader">
+              <h5><i class="fas fa-layer-group"></i> Maximum Combinations</h5>
+              <div class="info-tooltip" data-tooltip="Limit for hyperparameter combinations">
+                <i class="fas fa-info-circle"></i>
+              </div>
+            </div>
+            <div class="input-with-tag">
+              <input type="number" value="-1" class="form-control">
+            </div>
+            <p class="parameter-description">Maximum combinations to consider. Set to -1 to unconstrain.</p>
+          </div>
+        </div>
+        
+        <div class="parameter-actions">
+          <button class="btn btn-secondary btn-reset">
+            <i class="fas fa-undo"></i> Reset to Defaults
+          </button>
+          <button class="btn btn-primary btn-apply">
+            <i class="fas fa-check"></i> Apply Parameters
+          </button>
+        </div>
+      </div>
+    </div>
+</div>
+
+<script>
+ 
+ document.addEventListener('DOMContentLoaded', function () {
+    // Initialisation de l'application
+    initApplication();
+    setupTabs();
+    setupModelSelection();
+    setupDataAugmentationMethods();
+    setupDropdowns();
+    setupSliders();
+    setupValidationMethods();
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const useCaseId = urlParams.get('use_case_id');
+    
+    if (!useCaseId) {
+        console.error("ID du cas d'utilisation manquant dans l'URL");
+        // Vous pouvez rediriger vers une page d'erreur ou afficher un message plus user-friendly
+        return;
+    }
+});
+// Dans la partie script, ajoutez ces fonctions :
+
+// Fonction pour relier les dimensions avec les features
+function linkDimensionsWithFeatures() {
+    const featureCheckboxes = document.querySelectorAll('.feature-checkbox');
+    const dimensionCheckboxes = document.querySelectorAll('#dimension-reduction-content input[type="checkbox"]');
+    
+    featureCheckboxes.forEach((checkbox, index) => {
+        checkbox.addEventListener('change', () => {
+            if (index < dimensionCheckboxes.length) {
+                dimensionCheckboxes[index].disabled = !checkbox.checked;
+                if (!checkbox.checked) {
+                    dimensionCheckboxes[index].checked = false;
+                }
+            }
+        });
+        
+        // Initial state
+        if (index < dimensionCheckboxes.length) {
+            dimensionCheckboxes[index].disabled = !checkbox.checked;
+        }
+    });
+}
+
+// Fonction pour réinitialiser les dimensions
+function resetDimensionSettings() {
+    // Réinitialiser les cases à cocher
+    document.querySelectorAll('#dimension-reduction-content input[type="checkbox"]').forEach(checkbox => {
+        checkbox.checked = false;
+    });
+    
+    // Réinitialiser PCA
+    document.querySelector('#dimension-reduction-content input[type="checkbox"]').checked = true;
+    document.querySelector('#dimension-reduction-content select').value = 'Target variance';
+    document.getElementById('target-variance').value = 0.8;
+    
+    // Réinitialiser Random State
+    document.getElementById('random-state').value = 5;
+    
+    showToast('Dimension reduction settings reset');
+}
+
+// Fonction pour sauvegarder les paramètres
+function saveDimensionSettings() {
+    const settings = collectDimensionReductionParameters();
+    // Ici vous pourriez envoyer les données au serveur ou les stocker localement
+    localStorage.setItem('savedDimensionSettings', JSON.stringify(settings));
+    showToast('Dimension reduction settings saved');
+}
+// Fonction pour mettre à jour les options en fonction des features sélectionnées
+function updateDimensionOptions() {
+  const selectedFeatures = Array.from(document.querySelectorAll('.feature-checkbox:checked'))
+    .map(cb => ({
+      name: cb.dataset.feature,
+      type: cb.closest('tr').querySelector('td:nth-child(4)').textContent
+    }));
+
+  const numericalFeatures = selectedFeatures.filter(f => 
+    f.type.includes('int') || f.type.includes('float'));
+  
+  // Activer/désactiver les options de sélection de features
+  const featureOptions = document.querySelectorAll('.feature-selection-option');
+  featureOptions.forEach(opt => {
+    opt.disabled = selectedFeatures.length === 0;
+    if (selectedFeatures.length > 0) {
+      opt.checked = false;
+    }
+  });
+
+  // Mettre à jour les compteurs
+  document.querySelectorAll('.feature-count').forEach(el => {
+    el.textContent = `(${selectedFeatures.length} applicable)`;
+  });
+
+  // Gérer PCA
+  const pcaEnable = document.getElementById('pca-enable');
+  const pcaParams = document.querySelectorAll('.pca-param');
+  const pcaFeatureCount = document.getElementById('pca-feature-count');
+  
+  pcaEnable.disabled = numericalFeatures.length === 0;
+  pcaFeatureCount.textContent = numericalFeatures.length;
+  
+  if (numericalFeatures.length > 0) {
+    pcaEnable.checked = true;
+    pcaParams.forEach(param => param.disabled = false);
+  } else {
+    pcaEnable.checked = false;
+    pcaParams.forEach(param => param.disabled = true);
+  }
+}
+// Fonction pour lier les switches avec les features
+function setupFeatureSwitches() {
+  // Activer/désactiver les switches en fonction des features sélectionnées
+  document.querySelectorAll('.feature-checkbox').forEach(checkbox => {
+    checkbox.addEventListener('change', function() {
+      const anySelected = document.querySelectorAll('.feature-checkbox:checked').length > 0;
+      document.querySelectorAll('.feature-selection-switch').forEach(sw => {
+        sw.disabled = !anySelected;
+        if (!anySelected) sw.checked = false;
+      });
+    });
+  });
+
+  // Gérer l'affichage de la valeur de variance
+  const varianceSlider = document.getElementById('target-variance');
+  const varianceValue = document.getElementById('variance-value');
+  
+  varianceSlider.addEventListener('input', function() {
+    varianceValue.textContent = parseFloat(this.value).toFixed(2);
+  });
+
+  // Activer/désactiver les options PCA en fonction du switch
+  document.getElementById('pca-enable').addEventListener('change', function() {
+    const pcaOptions = document.getElementById('pca-options');
+    if (this.checked) {
+      pcaOptions.style.display = 'block';
+    } else {
+      pcaOptions.style.display = 'none';
+    }
+  });
+
+  // Initial state
+  const anySelected = document.querySelectorAll('.feature-checkbox:checked').length > 0;
+  document.querySelectorAll('.feature-selection-switch').forEach(sw => {
+    sw.disabled = !anySelected;
+  });
+}
+
+
+function initApplication() {
+    // Initialiser Feather Icons
+    if (typeof feather !== 'undefined') {
+        feather.replace();
+    }
+
+    // Récupérer l'ID du use case depuis l'URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const useCaseId = urlParams.get('use_case_id');
+    const filename = '{{ filename }}'; // Récupéré depuis le template
+    
+    // Initialiser le premier onglet
+    switchTab('features');
+    
+    // Charger les colonnes du dataset
+    if (filename) {
+        loadDatasetColumns(filename);
+    }
+    
+    // Charger les données du use case si disponible
+    if (useCaseId) {
+        loadUseCaseData(useCaseId);
+    } else {
+        // Masquer ou ajuster l'interface si aucun use case n'est sélectionné
+        const datasetInfo = document.querySelector('.dataset-info');
+        if (datasetInfo) {
+            datasetInfo.innerHTML = `
+                <h2 class="text-xl font-bold mb-2">Sélectionnez un dataset</h2>
+                <p class="text-gray-600 text-sm">Aucun dataset n'est actuellement sélectionné.</p>
+            `;
+        }
+    }
+
+    // Gestionnaire pour le bouton Run Expérience
+    document.getElementById('run-experiment-btn')?.addEventListener('click', function() {
+        if (!useCaseId) {
+            showWarning('Veuillez sélectionner un use case avant de lancer une expérience');
+            return;
+        }
+        runExperiment(useCaseId);
+    });
+    // Ajoutez ces lignes :
+    linkDimensionsWithFeatures();
+    
+    document.getElementById('reset-dimension-btn')?.addEventListener('click', resetDimensionSettings);
+    document.getElementById('save-dimension-btn')?.addEventListener('click', saveDimensionSettings);
+    // Écouter les changements de sélection de features
+  document.querySelectorAll('.feature-checkbox').forEach(checkbox => {
+    checkbox.addEventListener('change', updateDimensionOptions);
+  });
+  setupFeatureSwitches();
+
+}
+
+function loadDatasetColumns(filename) {
+    fetch(`/get_dataset_columns/${filename}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                console.error('Error loading columns:', data.error);
+                return;
+            }
+            
+            // Mettre à jour le tableau des features
+            updateFeatureTable(data.columns, data.dtypes);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+}
+
+function updateFeatureTable(columns, dtypes) {
+    const tbody = document.querySelector('.feature-table tbody');
+    tbody.innerHTML = ''; // Vider le tableau
+    
+    columns.forEach((column, index) => {
+        const type = dtypes[column] || 'Unknown';
+        const meaning = getMeaningFromType(type);
+        
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td><input type="checkbox" class="feature-checkbox" data-feature="${column}"></td>
+            <td>${column}</td>
+            <td>
+                <label class="switch">
+                    <input type="checkbox" class="status-toggle" checked>
+                    <span class="slider"></span>
+                </label>
+            </td>
+            <td>${type}</td>
+            <td class="meaning-cell">${meaning}</td>
+            <td>
+                <select class="imputation-select">
+                    ${getImputationOptions(type)}
+                </select>
+            </td>
+            <td>
+                <select class="transformer-select">
+                    ${getTransformerOptions(type)}
+                </select>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+    
+    // Gestion du bouton "Select All"
+    document.getElementById('select-all-features-btn').addEventListener('click', function() {
+        const checkboxes = document.querySelectorAll('.feature-checkbox');
+        const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+        
+        checkboxes.forEach(cb => {
+            cb.checked = !allChecked;
+        });
+    });
+    
+
+  }
+
+
+
+
+function getMeaningFromType(type) {
+    if (type.includes('int') || type.includes('float')) {
+        return 'Numerical';
+    } else if (type.includes('object') || type.includes('string')) {
+        return 'Categorical';
+    } else if (type.includes('bool')) {
+        return 'Boolean';
+    } else if (type.includes('datetime')) {
+        return 'Date';
+    }
+    return 'Other';
+}
+
+function getImputationOptions(type) {
+    if (type.includes('int') || type.includes('float')) {
+        return `
+            <option value="drop">Drop rows</option>
+            <option value="mean" selected>Mean</option>
+            <option value="median">Median</option>
+            <option value="zero">Replace with 0</option>
+            <option value="custom">Custom value</option>
+        `;
+    } else {
+        return `
+            <option value="drop">Drop rows</option>
+            <option value="mode" selected>Mode</option>
+            <option value="new_category">New category</option>
+            <option value="custom">Custom value</option>
+        `;
+    }
+}
+
+function getTransformerOptions(type) {
+    if (type.includes('int') || type.includes('float')) {
+        return `
+            <option value="standard" selected>Standard</option>
+            <option value="minmax">Min Max</option>
+            <option value="robust">Robust</option>
+        `;
+    } else {
+        return `
+            <option value="onehot">One Hot</option>
+            <option value="ordinal" selected>Ordinal</option>
+            <option value="label">Label</option>
+        `;
+    }
+}
+
+    // Ajoutez des gestionnaires d'événements pour les sélecteurs
+    document.querySelectorAll('.imputation-select, .transformer-select').forEach(select => {
+        select.addEventListener('change', function() {
+            console.log('Feature configuration changed:', this.value);
+        });
+    });
+
+
+function setupTabs() {
+    // Initialisation des onglets
+    switchTab('features');
+    
+    // Gestion du redimensionnement
+    window.addEventListener('resize', function() {
+        const activeTab = document.querySelector('.sliding-tab.active');
+        if (activeTab) updateIndicator(activeTab);
+    });
+}
+
+function switchTab(tabId) {
+    // Mettre à jour les boutons
+    document.querySelectorAll('.sliding-tab').forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.tab === tabId);
+        if (tab.dataset.tab === tabId) updateIndicator(tab);
+    });
+    
+    // Mettre à jour le contenu
+    document.querySelectorAll('.tab-pane').forEach(pane => {
+        pane.classList.toggle('active', pane.id === `${tabId}-content`);
+    });
+}
+
+function updateIndicator(activeTab) {
+    const indicator = document.querySelector('.slider-indicator');
+    const tabsContainer = document.querySelector('.sliding-tabs');
+    
+    if (indicator && tabsContainer) {
+        const tabRect = activeTab.getBoundingClientRect();
+        const containerRect = tabsContainer.getBoundingClientRect();
+        
+        indicator.style.width = `${tabRect.width}px`;
+        indicator.style.transform = `translateX(${tabRect.left - containerRect.left}px)`;
+    }
+}
+
+function setupModelSelection() {
+    // Select/Deselect all
+    document.getElementById('select-all-btn')?.addEventListener('click', function() {
+        document.querySelectorAll('.model-checkbox').forEach(checkbox => {
+            checkbox.checked = true;
+            checkbox.closest('.model-card').classList.add('selected');
+        });
+    });
+    
+    document.getElementById('deselect-all-btn')?.addEventListener('click', function() {
+        document.querySelectorAll('.model-checkbox').forEach(checkbox => {
+            checkbox.checked = false;
+            checkbox.closest('.model-card').classList.remove('selected');
+        });
+    });
+    
+    // Toggle selected style
+    document.querySelectorAll('.model-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            this.closest('.model-card').classList.toggle('selected', this.checked);
+        });
+    });
+    
+    // Compare button
+    document.getElementById('compare-btn')?.addEventListener('click', function() {
+        const selectedModels = Array.from(document.querySelectorAll('.model-checkbox:checked'))
+                                  .map(checkbox => checkbox.id.replace('-check', ''));
+        
+        if (selectedModels.length === 0) {
+            showWarning('Please select at least one model to compare');
+            return;
+        }
+        
+        console.log('Comparing models:', selectedModels.join(', '));
+    });
+}
+
+function setupDataAugmentationMethods() {
+    const methodCards = document.querySelectorAll('.method-card');
+    const selectModelBtn = document.getElementById('select-model-btn');
+    
+    methodCards.forEach(card => {
+        card.addEventListener('click', function() {
+            methodCards.forEach(c => c.classList.remove('selected'));
+            this.classList.add('selected');
+        });
+    });
+    
+    selectModelBtn?.addEventListener('click', function() {
+        const selectedCard = document.querySelector('.method-card.selected');
+        
+        if (selectedCard) {
+            const method = selectedCard.getAttribute('data-method');
+            showSuccess(`You selected: <strong>${getMethodName(method)}</strong>`);
+        } else {
+            showWarning('Please select a data augmentation method first');
+        }
+    });
+}
+
+function getMethodName(methodKey) {
+    const methodNames = {
+        'random': 'Random Over-sampling',
+        'smote': 'SMOTE',
+        'adasyn': 'ADASYN',
+        'borderline-smote': 'Borderline SMOTE',
+        'swim-maha': 'SWIM Maha',
+        'swim-rbf': 'SWIM RBF',
+        'smotenc': 'SMOTENC'
+    };
+    return methodNames[methodKey] || methodKey;
+}
+
+function setupDropdowns() {
+    // Font Awesome (if not already loaded)
+    if (!document.querySelector('#font-awesome')) {
+        const fa = document.createElement('link');
+        fa.id = 'font-awesome';
+        fa.rel = 'stylesheet';
+        fa.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css';
+        document.head.appendChild(fa);
+    }
+    
+    // Dropdown functionality
+    document.querySelectorAll('.dropdown').forEach(dropdown => {
+        const toggle = dropdown.querySelector('.dropdown-toggle');
+        const menu = dropdown.querySelector('.dropdown-menu');
+        
+        toggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            dropdown.classList.toggle('open');
+        });
+        
+        dropdown.querySelectorAll('li').forEach(item => {
+            item.addEventListener('click', () => {
+                const value = item.textContent;
+                const icon = item.querySelector('i')?.className || '';
+                dropdown.querySelector('.selected-value').innerHTML = 
+                    icon ? `<i class="${icon}"></i> ${value.split('\n')[0]}` : value;
+                dropdown.classList.remove('open');
+            });
+        });
+    });
+    
+    // Close dropdowns when clicking outside
+    document.addEventListener('click', () => {
+        document.querySelectorAll('.dropdown').forEach(d => d.classList.remove('open'));
+    });
+    
+    // Reset button
+    document.querySelector('.btn-reset')?.addEventListener('click', () => {
+        resetHyperparameters();
+        showToast('Parameters reset to default values');
+    });
+    
+    // Apply button
+    document.querySelector('.btn-apply')?.addEventListener('click', () => {
+        showToast('Hyperparameters applied successfully');
+    });
+}
+
+function resetHyperparameters() {
+    // Reset strategy method
+    const strategyDropdown = document.querySelector('.strategy-method .dropdown');
+    if (strategyDropdown) {
+        strategyDropdown.querySelector('.selected-value').innerHTML = '<i class="fas fa-th"></i> Grid Search';
+    }
+    
+    // Reset evaluation metric
+    const metricDropdown = document.querySelector('.evaluation-metric .dropdown');
+    if (metricDropdown) {
+        metricDropdown.querySelector('.selected-value').innerHTML = '<i class="fas fa-check-circle"></i> Accuracy';
+    }
+    
+    // Reset input fields
+    const timeLimitInput = document.querySelector('.time-limit input');
+    const maxCombinationsInput = document.querySelector('.max-combinations input');
+    if (timeLimitInput) timeLimitInput.value = '3600';
+    if (maxCombinationsInput) maxCombinationsInput.value = '-1';
+}
+
+function setupSliders() {
+    const testSetSlider = document.getElementById('testSetRatio');
+    const validationSetSlider = document.getElementById('validationSetRatio');
+    
+    if (testSetSlider) {
+        testSetSlider.addEventListener('input', function() {
+            updateSliderValue(this);
+        });
+    }
+    
+    if (validationSetSlider) {
+        validationSetSlider.addEventListener('input', function() {
+            updateSliderValue(this);
+        });
+    }
+}
+
+function updateSliderValue(slider) {
+    const value = (slider.value / 100).toFixed(2);
+    const valueDisplay = slider.nextElementSibling?.querySelector('.parameter-value');
+    if (valueDisplay) valueDisplay.textContent = value;
+}
+
+function setupValidationMethods() {
+    document.querySelectorAll('.method-option').forEach(option => {
+        option.addEventListener('click', function() {
+            document.querySelectorAll('.method-option').forEach(opt => opt.classList.remove('selected'));
+            this.classList.add('selected');
+        });
+    });
+}
+
+function collectFeatureParameters() {
+    const features = [];
+    
+    document.querySelectorAll('.feature-table tbody tr').forEach(row => {
+        features.push({
+            name: row.querySelector('td:nth-child(2)').textContent,
+            selected: row.querySelector('.feature-checkbox').checked,
+            enabled: row.querySelector('.status-toggle').checked,
+            type: row.querySelector('td:nth-child(4)').textContent,
+            meaning: row.querySelector('.meaning-cell').textContent,
+            imputation: row.querySelector('.imputation-select').value,
+            transformer: row.querySelector('.transformer-select').value
+        });
+    });
+    
+    return features;
+}
+
+function collectFeatureParameters() {
+    const features = [];
+    document.querySelectorAll('.feature-table tbody tr').forEach(row => {
+        features.push({
+            name: row.querySelector('td:nth-child(1)').textContent,
+            status: row.querySelector('.status-badge').textContent,
+            type: row.querySelector('td:nth-child(3)').textContent,
+            imputation: row.querySelector('.imputation-select').value,
+            transformer: row.querySelector('.transformer-select').value
+        });
+    });
+    return features;
+}
+
+
+// Modifiez la fonction de collecte des paramètres
+function collectDimensionReductionParameters() {
+  const selectedFeatures = Array.from(document.querySelectorAll('.feature-checkbox:checked'))
+    .map(cb => cb.dataset.feature);
+
+  return {
+    selectedFeatures: selectedFeatures,
+    featureSelection: {
+      removeMissing: document.querySelector('[data-target="missing"]').checked,
+      removeSingleValue: document.querySelector('[data-target="single-value"]').checked,
+      removeColinear: document.querySelector('[data-target="colinear"]').checked,
+      removeZeroImportance: document.querySelector('[data-target="zero-importance"]').checked,
+      removeLowImportance: document.querySelector('[data-target="low-importance"]').checked
+    },
+    pca: {
+      enabled: document.getElementById('pca-enable').checked,
+      mode: document.querySelector('#pca-options select').value,
+      targetVariance: document.getElementById('target-variance').value
+    }
+  };
+}
+let selectedFeatures = {};
+
+document.querySelectorAll('.feature-checkbox').forEach(checkbox => {
+  checkbox.addEventListener('change', (e) => {
+    const feature = e.target.dataset.feature;
+    if (e.target.checked) {
+      selectedFeatures[feature] = {
+        imputation: getImputationValue(feature),
+        transformer: getTransformerValue(feature)
+      };
+    } else {
+      delete selectedFeatures[feature];
+    }
+  });
+});
+
+function getImputationValue(feature) {
+  return document.querySelector(`tr[data-feature="${feature}"] .imputation-select`).value;
+}
+
+function getTransformerValue(feature) {
+  return document.querySelector(`tr[data-feature="${feature}"] .transformer-select`).value;
+}
+function applyDimensionReduction() {
+  console.log("Features sélectionnées avec paramètres :", selectedFeatures);
+  // ici tu appelles le backend ou tu lances la réduction en utilisant selectedFeatures
+}
+fetch('/apply_dimension_reduction', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ features: selectedFeatures, dimension_params: chosenDimensionParams })
+})
+.then(res => res.json())
+.then(data => console.log('Résultat :', data));
+
+function collectModelParameters() {
+    const models = [];
+    document.querySelectorAll('.model-card').forEach(card => {
+        const checkbox = card.querySelector('.model-checkbox');
+        if (checkbox.checked) {
+            const model = {
+                name: card.getAttribute('data-model'),
+                parameters: {}
+            };
+            
+            card.querySelectorAll('.parameter-group').forEach(group => {
+                const label = group.querySelector('label').textContent.trim();
+                const input = group.querySelector('input, select');
+                
+                if (input) {
+                    model.parameters[label] = input.type === 'checkbox' ? input.checked : input.value;
+                }
+            });
+            
+            models.push(model);
+        }
+    });
+    return models;
+}
+
+function collectEvaluationParameters() {
+    return {
+        testSplit: {
+            ratio: document.getElementById('testSetRatio').value
+        },
+        validationSplit: {
+            method: document.querySelector('.method-option.selected').textContent.trim(),
+            ratio: document.getElementById('validationSetRatio').value,
+            balanced: document.querySelector('.options-group input[type="checkbox"]:nth-child(1)').checked,
+            shuffle: document.querySelector('.options-group input[type="checkbox"]:nth-child(2)').checked
+        }
+    };
+}
+
+function collectDataAugmentationParameters() {
+    const selectedMethodCard = document.querySelector('.method-card.selected');
+    return {
+        method: selectedMethodCard ? selectedMethodCard.getAttribute('data-method') : null
+    };
+}
+
+function collectHyperparametersParameters() {
+    return {
+        strategy: document.querySelector('.strategy-method .selected-value').textContent.trim(),
+        evaluationMetric: document.querySelector('.evaluation-metric .selected-value').textContent.trim(),
+        timeLimit: document.querySelector('.time-limit input').value,
+        maxCombinations: document.querySelector('.max-combinations input').value
+    };
+}
+function runExperiment(useCaseId) {
+    if (!useCaseId) {
+        showError('Aucun use case sélectionné');
+        return;
+    }
+
+    showConfirmation('Lancer l\'expérience?', 'Voulez-vous exécuter l\'expérience avec les paramètres sélectionnés?', () => {
+        const experimentParams = collectExperimentParameters();
+        
+        showLoading('Exécution en cours', 'Veuillez patienter pendant que nous exécutons votre expérience...');
+        
+        fetch(`/run_experiment/${useCaseId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(experimentParams)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                showSuccess('Expérience terminée! Redirection vers les résultats...', () => {
+                    // Redirection vers flow-table.html avec les paramètres
+                    window.location.href = `/flow-table?use_case_id=${useCaseId}&experiment_id=${data.experiment_id}`;
+                });
+            } else {
+                showError(data.error || 'Une erreur est survenue');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showError('Une erreur est survenue lors de l\'exécution');
+        });
+    });
+}
+
+// Helper functions for notifications
+function showToast(message) {
+    const toast = document.createElement('div');
+    toast.className = 'toast-notification';
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => toast.classList.add('show'), 10);
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => document.body.removeChild(toast), 300);
+    }, 3000);
+}
+
+function showConfirmation(title, text, confirmCallback) {
+    Swal.fire({
+        title: title,
+        text: text,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Oui, lancer',
+        cancelButtonText: 'Annuler'
+    }).then((result) => {
+        if (result.isConfirmed) confirmCallback();
+    });
+}
+
+function showLoading(title, text) {
+    Swal.fire({
+        title: title,
+        html: text,
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading()
+    });
+}
+
+function showSuccess(message, callback) {
+    Swal.fire({
+        title: 'Succès',
+        html: message,
+        icon: 'success',
+        timer: 2000,
+        showConfirmButton: false
+    }).then(callback);
+}
+
+function showWarning(message) {
+    Swal.fire('Attention', message, 'warning');
+}
+
+function showError(message) {
+    Swal.fire('Erreur', message, 'error');
+}
+</script>
+{% endblock %}

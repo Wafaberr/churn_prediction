@@ -1,0 +1,174 @@
+/* === RESET DE BASE === */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: #f8f9fa;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+/* === MAIN CONTENT (contenu principal) === */
+.main-content {
+    margin-left: 0;
+}
+
+@media (min-width: 992px) {
+    .main-content {
+        margin-left: 250px; /* largeur sidebar fixe */
+    }
+
+    #sidebar {
+        width: 250px;
+        height: 100vh;
+        position: fixed;
+        top: 60px;
+        left: 0;
+        z-index: 1030;
+        display: block !important;
+    }
+
+    .offcanvas-backdrop {
+        display: none !important;
+    }
+}
+
+/* === NAVIGATION (sidebar, liens, actions) === */
+.sidebar-nav-link {
+    color: #333;
+    font-weight: 500;
+    padding: 10px 15px;
+    border-radius: 8px;
+    transition: 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.sidebar-nav-link:hover,
+.sidebar-nav-link.active {
+    background-color: #0d6efd;
+    color: white !important;
+}
+
+.sidebar-nav-link .fa {
+    width: 18px;
+    text-align: center;
+    color: #888;
+}
+
+.sidebar-nav-title {
+    font-size: 12px;
+    color: #9ca3af;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    margin-top: 20px;
+}
+
+/* === ONGLET / TABS === */
+.custom-tab-container {
+    border-bottom: 2px solid #ddd;
+    margin-bottom: 10px;
+}
+
+.custom-tab-list {
+    display: flex;
+    gap: 24px;
+    padding-left: 10px;
+}
+
+.custom-tab {
+    position: relative;
+    padding: 10px 0;
+    background: none;
+    border: none;
+    font-size: 14px;
+    color: #DFE3E8;
+    cursor: pointer;
+    outline: none;
+    transition: color 0.2s ease;
+}
+
+.custom-tab:hover {
+    color: #26292b;
+}
+
+.custom-tab.active {
+    color: #434447;
+}
+
+.custom-tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background-color: #009dff;
+    border-radius: 2px;
+}
+
+.nav-tabs .nav-link.active {
+    font-weight: bold;
+    border-bottom: 3px solid #0d6efd;
+}
+
+/* === PROFIL, BOUTONS D’ACTION, THEMES === */
+.profile-img {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+}
+
+.nav-actions {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.theme-toggle {
+    background: #fff7e6;
+    padding: 6px;
+    border-radius: 50%;
+    color: #ff8000;
+    cursor: pointer;
+}
+
+.collapsed-toggle {
+    margin-top: 20px;
+    font-size: 13px;
+    color: #666;
+    cursor: pointer;
+}
+
+/* === MODE SOMBRE === */
+body[data-bs-theme="dark"] {
+    background-color: #121212;
+    color: #e0e0e0;
+}
+
+body[data-bs-theme="dark"] .bg-light {
+    background-color: #1f1f1f !important;
+}
+
+body[data-bs-theme="dark"] .navbar,
+body[data-bs-theme="dark"] .offcanvas {
+    background-color: #1f1f1f !important;
+    border-color: #333 !important;
+}
+
+body[data-bs-theme="dark"] .sidebar-nav-link {
+    color: #bbb;
+}
+
+body[data-bs-theme="dark"] .sidebar-nav-link.active,
+body[data-bs-theme="dark"] .sidebar-nav-link:hover {
+    background-color: #0d6efd;
+    color: #fff !important;
+}
+
+body[data-bs-theme="dark"] .main-content {
+    background-color: #181818;
+}

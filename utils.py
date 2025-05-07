@@ -1,6 +1,5 @@
 # utils.py
 import os
-from werkzeug.utils import secure_filename
 
 ALLOWED_EXTENSIONS = {'csv', 'xlsx', 'xls'}
 

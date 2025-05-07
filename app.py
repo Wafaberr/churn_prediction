@@ -27,6 +27,8 @@ def create_app():
     os.makedirs(UPLOAD_FOLDER, exist_ok=True)
     app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
     # Configure upload folder
+    BASE_DIR = os.getcwd()
+    app.config['UPLOAD_FOLDER'] = os.path.join(BASE_DIR, 'uploads')
 
    
     mail.init_app(app)
@@ -41,7 +43,13 @@ def create_app():
     app.register_blueprint(use_case_bp)
     app.register_blueprint(data_set)
     
-    
+    @app.template_filter('number_format')
+    def number_format(value):
+        try:
+            return "{:,.2f}".format(float(value)).replace(",", " ").replace(".", ",")
+        except (ValueError, TypeError):
+            return value
+        
     @login_manager.user_loader
     def load_user(user_id):
         return User.query.get(int(user_id))

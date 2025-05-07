@@ -49,7 +49,7 @@ def get_use_cases():
         'created_at': case.created_at.strftime('%Y-%m-%d %H:%M')
     } for case in cases])
 
-@use_case_bp.route('User_case/experiment')
+@use_case_bp.route('/experiment')
 def experiment():
     use_case_id = request.args.get('use_case_id')
     
@@ -61,7 +61,7 @@ def experiment():
         abort(404)  # Or redirect to an error page
     
     # Pass the data to the template
-    return render_template('/User_case/experimentpage.html', 
+    return render_template('/use_case/experimentpage.html', 
                            use_case=use_case_data,  # Name consistent with the template
                            filename=use_case_data.filename)
 
@@ -107,23 +107,15 @@ def update_usecase(use_case_id):
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
-# Other routes...
-@use_case_bp.route('/Use_case/data')
-def data():
-    return render_template("/Use_case/data.html")
 
-@use_case_bp.route('/Use_case/flow')
+@use_case_bp.route('/use_case/flow')
 def flow():
-    return render_template('/Use_case/newprojet.html', active_tab='Flow')
+    return render_template('/use_case/newprojet.html', active_tab='Flow')
 
-@use_case_bp.route('/Use_case/newexperiment')
+@use_case_bp.route('/use_case/newexperiment')
 def newexperiment():
-    return render_template('/Use_case/flow-table.html')
+    return render_template('/use_case/flow-table.html')
 
-@use_case_bp.route('/Use_case/contenudata')
-def contenudata():
-    files = os.listdir(current_app.config['UPLOAD_FOLDER'])
-    return render_template('/Use_case/contenudata.html', files=files)
 
 @use_case_bp.route('/dashboard')
 def dashboard():
