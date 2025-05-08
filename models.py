@@ -25,6 +25,37 @@ class UseCase(db.Model):
     task_type = db.Column(db.String(50))
     filename = db.Column(db.String(100), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
+    
     def __repr__(self):
         return f'<UseCase {self.name}>'
+
+class ExperimentConfig(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    use_case_id = db.Column(db.Integer, db.ForeignKey('use_case.id'), nullable=False)
+    config_data = db.Column(db.JSON)  # Stocke la configuration au format JSON
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    use_case = db.relationship('UseCase', backref=db.backref('configs', lazy=True))
+
+class ExperimentRun(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    config_id = db.Column(db.Integer, db.ForeignKey('experiment_config.id'), nullable=False)
+    status = db.Column(db.String(20), default='pending')  # pending, running, completed, failed
+    results = db.Column(db.JSON)
+    started_at = db.Column(db.DateTime)
+    completed_at = db.Column(db.DateTime)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    config = db.relationship('ExperimentConfig', backref=db.backref('runs', lazy=True))
+
+class Experiment(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    use_case_id = db.Column(db.Integer, db.ForeignKey('use_case.id'), nullable=False)
+    parameters = db.Column(db.JSON, nullable=True)
+    results = db.Column(db.JSON, nullable=True)
+    status = db.Column(db.String(20), default='pending')
+    created_at = db.Column(db.DateTime, server_default=db.func.now())
+    
+    use_case = db.relationship('UseCase', backref='experiments')

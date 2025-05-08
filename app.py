@@ -60,6 +60,9 @@ def create_app():
     def home():
         return render_template("home.html")
 
-
+    @app.route('/dashboard')
+    def dashboard():
+        powerbi_url = "https://app.powerbi.com/reportEmbed?reportId=2fcbf768-81c5-40f3-8cf3-178f9f71abef&autoAuth=true&ctid=8b2b997e-5006-4d79-8773-e9d2f9b74857"
+        return render_template("dashboard.html", report_url=powerbi_url)
     return app
 

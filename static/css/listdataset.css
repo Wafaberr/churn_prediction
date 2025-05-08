@@ -1,0 +1,4 @@
+.dataset-item:hover {
+    background-color: #f9fafb;
+    transition: background-color 0.2s ease;
+}

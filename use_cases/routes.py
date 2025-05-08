@@ -1,3 +1,4 @@
+from datetime import datetime
 import os
 from flask import Blueprint, request, jsonify, render_template, abort
 from models import UseCase
@@ -5,6 +6,23 @@ from extensions import db
 from flask import current_app
 
 use_case_bp = Blueprint('use_case', __name__, url_prefix='/use_case')
+
+@use_case_bp.route('/list_datasets')
+def list_datasets():
+    files = []
+    upload_folder = current_app.config['UPLOAD_FOLDER']
+
+    for filename in os.listdir(upload_folder):
+        filepath = os.path.join(upload_folder, filename)
+        if os.path.isfile(filepath):
+            mod_time = os.path.getmtime(filepath)
+            days_ago = (datetime.now() - datetime.fromtimestamp(mod_time)).days
+            files.append({
+                "name": filename,
+                "updated": f"{days_ago} days ago" if days_ago > 0 else "today"
+            })
+
+    return render_template('use_case/listdatasets.html', files=files)
 
 @use_case_bp.route('/create_usecase', methods=['POST'])
 def create_usecase():
@@ -36,7 +54,7 @@ def create_usecase():
 def get_use_cases():
     filename = request.args.get('filename')
     if not filename:
-        return jsonify({'error': 'Filename parameter is required'}),400
+        return jsonify({'error': 'Filename parameter is required'}), 400
     
     cases = UseCase.query.filter_by(filename=filename).order_by(UseCase.created_at.desc()).all()
     
@@ -48,22 +66,6 @@ def get_use_cases():
         'task_type': case.task_type,
         'created_at': case.created_at.strftime('%Y-%m-%d %H:%M')
     } for case in cases])
-
-@use_case_bp.route('/experiment')
-def experiment():
-    use_case_id = request.args.get('use_case_id')
-    
-    # Retrieve the use case data from the database
-    use_case_data = UseCase.query.get(use_case_id)
-    
-    # Check if the use case exists
-    if not use_case_data:
-        abort(404)  # Or redirect to an error page
-    
-    # Pass the data to the template
-    return render_template('/use_case/experimentpage.html', 
-                           use_case=use_case_data,  # Name consistent with the template
-                           filename=use_case_data.filename)
 
 @use_case_bp.route('/delete_usecase', methods=['DELETE'])
 def delete_usecase():
@@ -107,17 +109,15 @@ def update_usecase(use_case_id):
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
+@use_case_bp.route('/newprojet')
+def newprojet():
+    filename = request.args.get('filename')
+    if not filename:
+        return render_template('use_case/newprojet.html')
+    return render_template('use_case/newprojet.html', filename=filename)
 
-@use_case_bp.route('/use_case/flow')
-def flow():
-    return render_template('/use_case/newprojet.html', active_tab='Flow')
-
-@use_case_bp.route('/use_case/newexperiment')
+@use_case_bp.route('/newexperiment')
 def newexperiment():
-    return render_template('/use_case/flow-table.html')
-
-
-@use_case_bp.route('/dashboard')
-def dashboard():
-    powerbi_url = "https://app.powerbi.com/reportEmbed?reportId=2fcbf768-81c5-40f3-8cf3-178f9f71abef&autoAuth=true&ctid=8b2b997e-5006-4d79-8773-e9d2f9b74857"
-    return render_template("dashboard.html", report_url=powerbi_url)
+    use_case_id = request.args.get('use_case_id')
+    filename = request.args.get('filename')
+    return render_template('use_case/flow-table.html', use_case_id=use_case_id, filename=filename)

@@ -7,8 +7,9 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-  <link rel="stylesheet" href="{{ url_for('static', filename='expirement.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/expirement.css') }}">
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="{{ url_for('static', filename='js/experiment.js') }}" defer></script>
 {% endblock %}
 
 {% block content %}
@@ -977,7 +978,7 @@
     </div>
 </div>
 
-<script>
+<!-- <script>
  
  document.addEventListener('DOMContentLoaded', function () {
     // Initialisation de l'application
@@ -1744,5 +1745,5 @@ function showWarning(message) {
 function showError(message) {
     Swal.fire('Erreur', message, 'error');
 }
-</script>
+</script> -->
 {% endblock %}
