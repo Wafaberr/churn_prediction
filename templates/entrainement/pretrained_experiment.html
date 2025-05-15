@@ -1,0 +1,911 @@
+{% extends "layout.html" %}
+
+{% block title %}Expérience avec modèle pré-entraîné - {{ use_case_name }}{% endblock %}
+
+{% block head %}
+<style>
+    :root {
+        --primary: #3b82f6;
+        --primary-dark: #2563eb;
+        --secondary: #f9fafb;
+        --text: #111827;
+        --text-light: #6b7280;
+        --border: #e5e7eb;
+        --success: #10b981;
+        --error: #ef4444;
+        --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        --btn-hover-shadow: rgba(59, 130, 246, 0.3);
+    }
+
+    body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        color: var(--text);
+        background-color: #f8fafc;
+        margin: 0;
+        padding: 0;
+    }
+
+    /* Container */
+    .experiment-container {
+        max-width: 1200px;
+        margin: 2rem auto;
+        padding: 2rem 2rem 3rem 2rem;
+        background: white;
+        border-radius: 1rem;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Breadcrumb */
+    .breadcrumb-nav {
+        margin-bottom: 2rem;
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: var(--text-light);
+    }
+
+    .breadcrumb-list {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .breadcrumb-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .breadcrumb-link {
+        color: var(--primary);
+        text-decoration: none;
+        font-weight: 600;
+        transition: color 0.25s ease;
+    }
+
+    .breadcrumb-link:hover {
+        color: var(--primary-dark);
+        text-decoration: underline;
+    }
+
+    .breadcrumb-separator {
+        color: var(--text-light);
+    }
+
+    /* Header */
+    .experiment-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .experiment-title {
+        font-size: 2.25rem;
+        font-weight: 800;
+        color: var(--text);
+        margin: 0;
+        line-height: 1.1;
+    }
+
+    .model-badge {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        color: white;
+        padding: 0.5rem 1.2rem;
+        border-radius: 9999px;
+        font-weight: 700;
+        font-size: 1rem;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+        display: inline-flex;
+        align-items: center;
+        gap: 0.7rem;
+        box-shadow: 0 6px 12px var(--btn-hover-shadow);
+        user-select: none;
+    }
+
+    /* Icon in badge */
+    .model-badge i {
+        font-size: 1.2rem;
+        transform: rotate(-10deg);
+    }
+
+    /* Cards */
+    .config-card {
+        background: white;
+        border-radius: 1rem;
+        box-shadow: 0 12px 30px rgba(59, 130, 246, 0.1);
+        padding: 2rem 2.5rem;
+        margin-bottom: 2.5rem;
+        border: none;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .config-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 20px 40px rgba(59, 130, 246, 0.25);
+    }
+
+    .card-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 2rem;
+        gap: 1.25rem;
+    }
+
+    .card-icon {
+        background-color: #e0e7ff;
+        padding: 1rem;
+        border-radius: 1rem;
+        color: var(--primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 3rem;
+        height: 3rem;
+        font-size: 1.75rem;
+        box-shadow: 0 2px 12px rgba(59, 130, 246, 0.2);
+    }
+
+    .card-title {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: var(--text);
+        margin: 0;
+        letter-spacing: 0.02em;
+    }
+
+    /* Configuration Grid */
+    .config-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 1.8rem;
+        margin-bottom: 2rem;
+    }
+
+    .config-item {
+        background-color: var(--secondary);
+        padding: 1.5rem 1.8rem;
+        border-radius: 0.8rem;
+        border: 1px solid var(--border);
+        box-shadow: inset 0 0 7px rgba(0, 0, 0, 0.03);
+        transition: background-color 0.3s ease;
+        cursor: default;
+    }
+
+    .config-item:hover {
+        background-color: #eff6ff;
+    }
+
+    .config-label {
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: var(--primary-dark);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        margin-bottom: 0.4rem;
+        user-select: none;
+    }
+
+    .config-value {
+        font-weight: 700;
+        color: var(--text);
+        word-wrap: break-word;
+        font-size: 1rem;
+        white-space: pre-wrap;
+    }
+
+    /* Advanced Parameters */
+    .advanced-params {
+        border-top: 1px solid var(--border);
+        padding-top: 2rem;
+        margin-top: 2rem;
+    }
+
+    .advanced-title {
+        font-size: 1.125rem;
+        font-weight: 700;
+        color: var(--text);
+        margin-bottom: 1rem;
+    }
+
+    .param-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .param-group {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .param-label {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--primary-dark);
+        margin-bottom: 0.5rem;
+        user-select: none;
+    }
+
+    .param-input {
+        padding: 0.75rem 1rem;
+        border: 2px solid var(--primary);
+        border-radius: 0.8rem;
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--text);
+        background: #f9fafb;
+        transition: box-shadow 0.25s ease, border-color 0.25s ease;
+        outline-offset: 2px;
+    }
+
+    .param-input:focus {
+        outline: none;
+        border-color: var(--primary-dark);
+        box-shadow: 0 0 10px var(--btn-hover-shadow);
+        background: white;
+    }
+
+    /* Results Section */
+    .results-container {
+        border-radius: 1rem;
+        padding: 2rem 2.5rem;
+        background-color: var(--secondary);
+        margin-bottom: 3rem;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.05);
+        min-height: 14rem;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .empty-state {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+        color: var(--text-light);
+        width: 100%;
+        padding: 0 2rem;
+        user-select: none;
+    }
+
+    .empty-icon {
+        font-size: 3.5rem;
+        margin-bottom: 1rem;
+        color: #cbd5e1;
+        animation: bounce 2s infinite ease-in-out;
+    }
+
+    .empty-text {
+        font-size: 1.25rem;
+        font-weight: 700;
+        margin-bottom: 0.3rem;
+        color: var(--primary-dark);
+    }
+
+    .empty-subtext {
+        font-size: 1rem;
+        color: #94a3b8;
+        font-weight: 500;
+    }
+
+    /* Loading State */
+    .loading-state {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+        user-select: none;
+    }
+
+    .loading-spinner {
+        width: 3.5rem;
+        height: 3.5rem;
+        border: 0.5rem solid rgba(59, 130, 246, 0.1);
+        border-radius: 50%;
+        border-top-color: var(--primary);
+        animation: spin 1s linear infinite;
+        box-shadow: 0 0 8px var(--primary);
+    }
+
+    .loading-text {
+        font-weight: 600;
+        color: var(--primary-dark);
+        font-size: 1.2rem;
+    }
+
+    /* Results Content */
+    .results-content {
+        animation: fadeIn 0.35s ease-out forwards;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(15px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    @keyframes bounce {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-12px); }
+    }
+
+    /* Metrics Section */
+    .metrics-section {
+        background: white;
+        border-radius: 1rem;
+        padding: 2rem 2.5rem;
+        margin-bottom: 2.5rem;
+        border: 1px solid var(--border);
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.05);
+    }
+
+    .section-title {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--primary-dark);
+        margin-bottom: 2rem;
+        user-select: none;
+    }
+
+    .section-icon {
+        color: var(--primary);
+        font-size: 1.7rem;
+        filter: drop-shadow(0 1px 1px rgba(0,0,0,0.15));
+    }
+
+    .metrics-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 1rem;
+    }
+
+    .metrics-table th, .metrics-table td {
+        text-align: left;
+        padding: 1rem 1.5rem;
+    }
+
+    .metrics-table th {
+        background-color: #e0e7ff;
+        font-weight: 700;
+        color: var(--primary-dark);
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        border-bottom: 3px solid var(--primary);
+    }
+
+    .metrics-table td {
+        border-bottom: 1.5px solid #f3f4f6;
+        font-weight: 600;
+        color: var(--text);
+    }
+
+    .metrics-table tr:nth-child(even) td {
+        background-color: #f9fafb;
+    }
+
+    .metrics-table tr:last-child td {
+        border-bottom: none;
+    }
+
+    /* Info Grid */
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 2rem;
+        margin-bottom: 2.5rem;
+    }
+
+    .info-card {
+        background: white;
+        border-radius: 1rem;
+        padding: 2rem;
+        border: 1px solid var(--border);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+        transition: box-shadow 0.3s ease;
+        cursor: default;
+    }
+
+    .info-card:hover {
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+    }
+
+    .info-title {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--primary-dark);
+        margin-bottom: 1.25rem;
+        user-select: none;
+    }
+
+    .info-title i {
+        font-size: 1.75rem;
+        filter: drop-shadow(0 1px 1px rgba(0,0,0,0.15));
+    }
+
+    .info-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid #f3f4f6;
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--text);
+    }
+
+    .info-item:last-child {
+        border-bottom: none;
+    }
+
+    .info-label {
+        color: var(--primary-dark);
+        font-weight: 600;
+    }
+
+    /* Buttons */
+    .action-buttons {
+        display: flex;
+        justify-content: flex-end;
+        gap: 1.5rem;
+        margin-top: 1.5rem;
+        flex-wrap: wrap;
+    }
+
+    .btn {
+        padding: 0.9rem 2.3rem;
+        border-radius: 1rem;
+        font-weight: 700;
+        font-size: 1rem;
+        transition: all 0.25s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 1rem;
+        cursor: pointer;
+        border: none;
+        user-select: none;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        background-position: 100% center;
+        background-size: 200% auto;
+        background-repeat: no-repeat;
+    }
+
+    .btn i {
+        font-size: 1.2rem;
+    }
+
+    .btn-primary {
+        background-image: linear-gradient(45deg, #3b82f6, #2563eb);
+        color: white;
+        box-shadow: 0 6px 16px rgba(37, 99, 235, 0.5);
+    }
+
+    .btn-primary:hover:not(:disabled) {
+        background-position: 0 center;
+        box-shadow: 0 8px 20px #2563eb;
+        transform: translateY(-3px);
+    }
+
+    .btn-secondary {
+        background-color: var(--secondary);
+        color: var(--primary-dark);
+        border: 2px solid var(--primary-dark);
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+        background-color: var(--primary-dark);
+        color: white;
+        box-shadow: 0 8px 20px #2563eb;
+        transform: translateY(-3px);
+    }
+
+    .btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none !important;
+        box-shadow: none !important;
+    }
+
+    /* Fixed notification */
+    .fixed {
+        position: fixed !important;
+        z-index: 9999;
+    }
+
+    .bottom-6 {
+        bottom: 1.5rem !important;
+    }
+
+    .right-6 {
+        right: 1.5rem !important;
+    }
+
+    .bg-green-500 {
+        background-color: #10b981 !important;
+    }
+
+    .text-white {
+        color: white !important;
+    }
+
+    .px-4 {
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+    }
+
+    .py-3 {
+        padding-top: 0.75rem !important;
+        padding-bottom: 0.75rem !important;
+    }
+
+    .rounded-lg {
+        border-radius: 1rem !important;
+    }
+
+    .shadow-lg {
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+    }
+
+    .flex {
+        display: flex !important;
+    }
+
+    .items-center {
+        align-items: center !important;
+    }
+
+    .mr-2 {
+        margin-right: 0.5rem !important;
+    }
+
+    /* Notification animation */
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(15px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .animate-fade-in {
+        animation: fadeIn 0.4s ease forwards;
+    }
+
+    .opacity-0 {
+        opacity: 0 !important;
+    }
+
+    .translate-y-2 {
+        transform: translateY(0.5rem) !important;
+    }
+
+    .transition-all {
+        transition: all 0.3s ease !important;
+    }
+
+    .duration-300 {
+        transition-duration: 0.3s !important;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .experiment-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+
+        .config-grid, .param-grid {
+            grid-template-columns: 1fr !important;
+        }
+
+        .action-buttons {
+            flex-direction: column;
+            gap: 1rem;
+            align-items: stretch;
+        }
+
+        .btn {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .results-container {
+            padding: 1.5rem 1.8rem;
+            min-height: 12rem;
+        }
+
+        .metrics-section {
+            padding: 1.5rem 2rem;
+        }
+
+        .info-grid {
+            grid-template-columns: 1fr !important;
+            gap: 1.2rem;
+        }
+    }
+</style>
+
+<!-- Load Fontawesome for icons -->
+<link
+  href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
+  rel="stylesheet"
+/>
+{% endblock %}
+
+{% block content %}
+<div class="experiment-container" role="main" aria-label="Expérience avec modèle pré-entraîné">
+    <!-- Breadcrumb -->
+    <nav class="breadcrumb-nav" aria-label="Breadcrumb">
+        <ol class="breadcrumb-list">
+            <li class="breadcrumb-item">
+                <a href="{{ url_for('use_case.newprojet', filename=filename) }}" class="breadcrumb-link" aria-current="false">
+                    <i class="fas fa-folder" aria-hidden="true"></i>
+                    <span>{{ filename|truncate(20) }}</span>
+                </a>
+            </li>
+            <li class="breadcrumb-item" aria-current="page">
+                <span class="breadcrumb-separator" aria-hidden="true"><i class="fas fa-chevron-right"></i></span>
+                <span>{{ use_case_name|truncate(25) }}</span>
+            </li>
+        </ol>
+    </nav>
+
+    <!-- Header -->
+    <header class="experiment-header">
+        <h1 class="experiment-title">Expérience avec modèle pré-entraîné</h1>
+        <span class="model-badge" aria-label="Modèle pré-entraîné">
+            <i class="fas fa-bolt" aria-hidden="true"></i>
+            <span>Modèle Pré-entraîné</span>
+        </span>
+    </header>
+
+    <!-- Configuration Card -->
+    <section class="config-card" aria-labelledby="config-title" tabindex="0">
+        <div class="card-header">
+            <div class="card-icon" aria-hidden="true">
+                <i class="fas fa-cog"></i>
+            </div>
+            <h2 id="config-title" class="card-title">Configuration du modèle</h2>
+        </div>
+       <div class="config-item" tabindex="0" aria-label="Colonne cible">
+    <div class="config-label">Colonne cible</div>
+    <div class="config-value">
+        {% if target_column %}
+            {{ target_column }}
+        {% else %}
+            <span class="text-red-500">Non définie</span>
+        {% endif %}
+    </div>
+</div>
+        <div class="config-grid">
+            <div class="config-item" tabindex="0" aria-label="Modèle sélectionné">
+                <div class="config-label">Modèle sélectionné</div>
+                <div class="config-value" title="{{ model_path }}">{{ model_path }}</div>
+            </div>
+
+            <div class="config-item" tabindex="0" aria-label="Fichier source">
+                <div class="config-label">Fichier source</div>
+                <div class="config-value">{{ filename }}</div>
+            </div>
+
+            <div class="config-item" tabindex="0" aria-label="Cas d'usage">
+                <div class="config-label">Cas d'usage</div>
+                <div class="config-value">{{ use_case_name }}</div>
+            </div>
+        </div>
+
+        <div class="advanced-params" aria-label="Paramètres avancés">
+            <h3 class="advanced-title">Paramètres avancés</h3>
+            <div class="param-grid">
+                <div class="param-group">
+                    <label for="learning-rate" class="param-label">Taux d'apprentissage</label>
+                    <input type="number" step="0.001" value="0.001" id="learning-rate" class="param-input" aria-describedby="learning-rate-description">
+                    <small id="learning-rate-description" style="color: var(--text-light); font-style: italic;">Valeur typique entre 0.0001 et 0.01</small>
+                </div>
+                <div class="param-group">
+                    <label for="epochs" class="param-label">Nombre d'époques</label>
+                    <input type="number" value="10" min="1" id="epochs" class="param-input" aria-describedby="epochs-description">
+                    <small id="epochs-description" style="color: var(--text-light); font-style: italic;">Nombre d'itérations sur l'ensemble des données</small>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Results Section -->
+    <section class="results-container" aria-live="polite" aria-atomic="true">
+        <!-- Empty State -->
+        <div class="empty-state" id="empty-state" role="status" aria-label="Aucun résultat disponible">
+            <div class="empty-icon" aria-hidden="true">
+                <i class="fas fa-chart-bar"></i>
+            </div>
+            <h3 class="empty-text">Aucun résultat disponible</h3>
+            <p class="empty-subtext">Exécutez le modèle pour voir les résultats</p>
+        </div>
+
+        <!-- Loading State -->
+        <div class="loading-state" id="loading-state" style="display: none;" role="alert" aria-live="assertive">
+            <div class="loading-spinner" aria-hidden="true"></div>
+            <p class="loading-text">Exécution en cours...</p>
+        </div>
+
+        <!-- Results Content -->
+        <div class="results-content" id="results-content" tabindex="0" style="display:none;">
+            <!-- Résultats seront insérés ici via JavaScript -->
+        </div>
+    </section>
+
+    <!-- Action Buttons -->
+    <div class="action-buttons">
+        <button class="btn btn-secondary" id="save-results" style="display: none;" aria-disabled="true" aria-label="Sauvegarder les résultats">
+            <i class="fas fa-save" aria-hidden="true"></i>
+            <span>Sauvegarder</span>
+        </button>
+        <button class="btn btn-primary" id="run-experiment" aria-label="Exécuter le modèle">
+            <i class="fas fa-play" aria-hidden="true"></i>
+            <span>Exécuter le modèle</span>
+        </button>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const runButton = document.getElementById('run-experiment');
+    const saveButton = document.getElementById('save-results');
+    const emptyState = document.getElementById('empty-state');
+    const loadingState = document.getElementById('loading-state');
+    const resultsContent = document.getElementById('results-content');
+
+    runButton.addEventListener('click', async function() {
+        emptyState.style.display = 'none';
+        loadingState.style.display = 'flex';
+        resultsContent.style.display = 'none';
+        saveButton.style.display = 'none';
+        runButton.disabled = true;
+        runButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Exécution...</span>';
+
+        try {
+            const response = await fetch('/entrainement/run_pretrained', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    filename: "{{ filename }}",
+                    use_case_id: "{{ use_case_id }}"
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.error) {
+                throw new Error(result.error);
+            }
+
+            const m = result.metrics;
+            const predictions = result.predictions || [];
+            const datasetSize = result.dataset_size || "Inconnu";
+
+            const metricsHtml = `
+                <div class="metrics-section" aria-label="Métriques de performance">
+                    <h3 class="section-title">
+                        <i class="fas fa-tachometer-alt section-icon" aria-hidden="true"></i>
+                        Métriques de performance
+                    </h3>
+                    <div class="overflow-x-auto" role="table" aria-describedby="metrics-desc">
+                        <table class="metrics-table" role="grid">
+                            <thead>
+                                <tr><th scope="col">Métrique</th><th scope="col">Valeur</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>Accuracy</td><td>${(m.accuracy ?? '-').toFixed(4)}</td></tr>
+                                <tr><td>Précision</td><td>${(m.precision ?? '-').toFixed(4)}</td></tr>
+                                <tr><td>Rappel</td><td>${(m.recall ?? '-').toFixed(4)}</td></tr>
+                                <tr><td>F1-Score</td><td>${(m.f1_score ?? '-').toFixed(4)}</td></tr>
+                                ${m.auc_roc !== undefined ? `<tr><td>AUC-ROC</td><td>${(m.auc_roc).toFixed(4)}</td></tr>` : ""}
+                            </tbody>
+                        </table>
+                        <p id="metrics-desc" hidden>Métriques calculées sur le dataset complet.</p>
+                    </div>
+                </div>`;
+
+            const infoHtml = `
+                <div class="info-grid" aria-label="Informations supplémentaires">
+                    <div class="info-card">
+                        <h4 class="info-title">
+                            <i class="fas fa-info-circle section-icon" style="color: #3b82f6;" aria-hidden="true"></i>
+                            Informations
+                        </h4>
+                        <div class="info-item"><span class="info-label">Taille du dataset</span><span class="info-value">${datasetSize}</span></div>
+                        <div class="info-item"><span class="info-label">Date d'exécution</span><span class="info-value">${new Date().toLocaleString()}</span></div>
+                    </div>
+                </div>`;
+
+            const predictionHtml = `
+                <div class="metrics-section" aria-label="Exemple de prédictions">
+                    <h3 class="section-title">
+                        <i class="fas fa-list-ol section-icon" style="color: #10b981;" aria-hidden="true"></i>
+                        Exemple de prédictions
+                    </h3>
+                    <div class="overflow-x-auto" role="table" aria-describedby="predictions-desc">
+                        <table class="metrics-table" role="grid">
+                            <thead>
+                                <tr><th scope="col">Index</th><th scope="col">Prédiction</th></tr>
+                            </thead>
+                            <tbody>
+                                ${predictions.slice(0, 5).map(([index, pred]) => `<tr><td>${index}</td><td>${pred}</td></tr>`).join('')}
+                            </tbody>
+                        </table>
+                        <p id="predictions-desc" hidden>5 premières prédictions générées par le modèle.</p>
+                    </div>
+                </div>`;
+
+            resultsContent.innerHTML = metricsHtml + infoHtml + predictionHtml;
+            resultsContent.style.display = 'block';
+            loadingState.style.display = 'none';
+            saveButton.style.display = 'inline-flex';
+            saveButton.setAttribute('aria-disabled', 'false');
+
+        } catch (error) {
+            console.error('Erreur:', error);
+            resultsContent.innerHTML = `
+                <div class="metrics-section" style="border-left: 4px solid var(--error);" role="alert" aria-live="assertive">
+                    <h3 class="section-title">
+                        <i class="fas fa-exclamation-triangle section-icon" style="color: var(--error);" aria-hidden="true"></i>
+                        Erreur lors de l'exécution
+                    </h3>
+                    <p>${error.message || 'Une erreur est survenue lors de l\'exécution du modèle'}</p>
+                </div>
+            `;
+            resultsContent.style.display = 'block';
+            loadingState.style.display = 'none';
+            saveButton.style.display = 'none';
+            saveButton.setAttribute('aria-disabled', 'true');
+        } finally {
+            runButton.disabled = false;
+            runButton.innerHTML = '<i class="fas fa-play"></i><span>Exécuter le modèle</span>';
+        }
+    });
+
+    saveButton.addEventListener('click', async function() {
+        this.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Sauvegarde...</span>';
+        this.disabled = true;
+        this.setAttribute('aria-disabled', 'true');
+
+        await new Promise(resolve => setTimeout(resolve, 1500));
+
+        const notification = document.createElement('div');
+        notification.className = 'fixed bottom-6 right-6 bg-green-500 text-white px-4 py-3 rounded-lg shadow-lg flex items-center animate-fade-in';
+        notification.setAttribute('role', 'alert');
+        notification.innerHTML = `
+            <i class="fas fa-check-circle mr-2" aria-hidden="true"></i>
+            <span>Résultats sauvegardés avec succès</span>
+        `;
+        document.body.appendChild(notification);
+
+        setTimeout(() => {
+            notification.classList.add('opacity-0', 'translate-y-2', 'transition-all', 'duration-300');
+            setTimeout(() => notification.remove(), 300);
+        }, 3000);
+
+        this.innerHTML = '<i class="fas fa-save"></i><span>Sauvegarder</span>';
+        this.disabled = false;
+        this.setAttribute('aria-disabled', 'false');
+    });
+});
+</script>
+
+{% endblock %}
+

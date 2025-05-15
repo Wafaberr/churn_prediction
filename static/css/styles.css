@@ -5,20 +5,10 @@ body {
     background-color: #f9f9f9;
 }
 
-header {
-    background-color: #fff;
-    padding: 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 1px solid #eaeaea;
+/* Espacement général */
+.file-header {
+    padding: 20px 0;
 }
-
-.search-container {
-    display: flex;
-    align-items: center;
-}
-
 input[type="text"] {
     padding: 10px;
     border: 1px solid #ccc;
@@ -89,6 +79,74 @@ body.click-catcher-active::after {
 .items-center {
         align-items: center;
     }
-    .z-50 {
-        z-index: 50;
-    }
+
+
+.fixed {
+    position: fixed;
+}
+
+.inset-0 {
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+}
+
+.z-50 {
+    z-index: 50;
+}
+/* Amélioration du breadcrumb */
+.breadcrumb {
+    padding: 5px 0;
+    margin-right: 40px;
+}
+
+.breadcrumb a {
+    color: #3b82f6; /* blue-500 */
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.breadcrumb a:hover {
+    color: #2563eb; /* blue-600 */
+    text-decoration: underline;
+    
+}
+
+.breadcrumb span {
+    color: #374151; /* gray-700 */
+    font-weight: 600;
+}
+.breadcrumb {
+    flex-shrink: 0; /* Empêche le rétrécissement */
+    margin-right: 20px; /* Espace entre le breadcrumb et la recherche */
+}
+
+.breadcrumb .fa-chevron-right {
+    font-size: 0.75rem;
+}
+/* Style pour le conteneur principal */
+.flex.justify-between.items-center {
+    position: sticky;
+    top: 0;
+    background-color: rgba(255, 255, 255, 0);
+    z-index: 40;
+    padding: 15px 20px;
+    border-bottom: 1px solid #eaeaea00;
+}
+/* Style pour le search-container */
+.search-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0; /* Permet au conteneur de rétrécir si nécessaire */
+}
+/* Style pour l'input de recherche */
+.search-container input {
+    min-width: 250px; /* Largeur minimale */
+}
+
+/* Style pour le bouton */
+.create-button {
+    white-space: nowrap; /* Empêche le texte de se casser sur plusieurs lignes */
+}
