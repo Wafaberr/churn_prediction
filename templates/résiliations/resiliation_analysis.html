@@ -1,0 +1,747 @@
+{% extends "layout.html" %}
+
+{% block title %}Analyse des Résiliations Clients{% endblock %}
+
+{% block head_extra %}
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/resiliation.css') }}">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{{ url_for('static', filename='js/resiliation.js') }}" defer></script>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="header bg-primary text-white p-4 mb-4 rounded">
+        <div class="d-flex justify-content-between align-items-center">
+            <h1><i class="fas fa-user-slash me-2"></i>Analyse des Résiliations Clients</h1>
+            <span class="badge bg-light text-dark fs-6">v1.0</span>
+        </div>
+        <p class="mb-0">Système d'analyse prédictive et de recommandation de solutions</p>
+    </div>
+
+    <!-- Horizontal Navigation -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="nav-horizontal d-flex flex-wrap gap-2">
+                <button class="btn btn-outline-primary nav-btn active" data-target="upload-section">
+                    <i class="fas fa-upload me-2"></i>Prédiction d'un seule client
+                </button>
+                <button class="btn btn-outline-primary nav-btn" data-target="analyze-section">
+                    <i class="fas fa-chart-line me-2"></i>Analyser les résiliations
+                </button>
+                <button class="btn btn-outline-primary nav-btn" data-target="history-section">
+                    <i class="fas fa-history me-2"></i>Historique des analyses
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="row">
+        <div class="col-12">
+            <!-- Upload Dataset Section -->
+            <div id="upload-section" class="content-section">
+                <div class="card shadow-lg mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h3 class="card-title"><i class="fas fa-user-shield me-2"></i>Prédiction de Résiliation Client
+                        </h3>
+                    </div>
+
+                    <div class="card-body">
+                        <form method="POST" id="prediction-form">
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-6">
+                                    <div class="form-floating">
+                                        <select name="model_name" class="form-select" id="model-select" required>
+                                            <option value="">-- Sélectionnez un modèle --</option>
+                                            {% for model in pretrained_models %}
+                                            <option value="{{ model }}">{{ model }}</option>
+                                            {% endfor %}
+                                        </select>
+                                        <label for="model-select">Modèle de prédiction *</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Première ligne - 4 colonnes -->
+                            <div class="row g-3 mb-3">
+                                <!-- Colonne 1 -->
+                                <div class="col-md-3">
+                                    <div class="form-floating">
+                                        <input type="text" name="id_client" class="form-control" id="id-client"
+                                            required>
+                                        <label for="id-client">ID Client</label>
+                                    </div>
+                                </div>
+
+                                <!-- Colonne 2 - Actel Code -->
+                                <div class="col-md-3">
+                                    <div class="form-floating">
+                                        <select name="actel_code" class="form-select" id="actel-code">
+                                            <option value="">-- Sélectionner un ACTEL --</option>
+                                            <option value="">-- Sélectionner un ACTEL --</option>
+                                            <option value="38|Actel Médéa (38)">38|Actel Médéa (38)</option>
+                                            <option value="H3|ACTEL Boudouaou (H3)">H3|ACTEL Boudouaou (H3)</option>
+                                            <option value="H2|ACTEL Dar El Beida (H2)">H2|ACTEL Dar El Beida (H2)
+                                            </option>
+                                            <option value="73|ACTEL EL WOUROUD(73)">73|ACTEL EL WOUROUD(73)</option>
+                                            <option value="12|ACTEL LAARARSSA(12)">12|ACTEL LAARARSSA(12)</option>
+                                            <option value="64|ACTEL Kouba (64)">64|ACTEL Kouba (64)</option>
+                                            <option value="G1|ACTEL Drean (G1)">G1|ACTEL Drean (G1)</option>
+                                            <option value="H6|Actel El Achour  (H6)">H6|Actel El Achour (H6)</option>
+                                            <option value="L5|ACTEL Amizour (L5)">L5|ACTEL Amizour (L5)</option>
+                                            <option value="H4|ACTEL Tizi Ouzou Nouvelle Ville (H4)">H4|ACTEL Tizi Ouzou
+                                                Nouvelle Ville (H4)</option>
+                                            <option value="93|ACTEL Batna-An Nasr(93)">93|ACTEL Batna-An Nasr(93)
+                                            </option>
+                                            <option value="A2|ACTEL Bordj El Bahri (A2)">A2|ACTEL Bordj El Bahri (A2)
+                                            </option>
+                                            <option value="98|ACTEL Azazga (98)">98|ACTEL Azazga (98)</option>
+                                            <option value="28|ACTEL Jijel (28)">28|ACTEL Jijel (28)</option>
+                                            <option value="22|ACTEL Boumerdes (22)">22|ACTEL Boumerdes (22)</option>
+                                            <option value="M7|ACTEL Hai Ennasr">M7|ACTEL Hai Ennasr</option>
+                                            <option value="82|ACTEL BACHDJARAH(82)">82|ACTEL BACHDJARAH(82)</option>
+                                            <option value="N8|ACTEL Mesra(N8)">N8|ACTEL Mesra(N8)</option>
+                                            <option value="L1|ACTEL Taher (L1)">L1|ACTEL Taher (L1)</option>
+                                            <option value="11|ACTEL Ain Temouchent (11)">11|ACTEL Ain Temouchent (11)
+                                            </option>
+                                            <option value="81|ACTEL Zeralda (81)">81|ACTEL Zeralda (81)</option>
+                                            <option value="L4|ACTEL Sidi Aich (L4)">L4|ACTEL Sidi Aich (L4)</option>
+                                            <option value="10|ACTEL Sidi Bel Abbes (10)">10|ACTEL Sidi Bel Abbes (10)
+                                            </option>
+                                            <option value="84|ACTEL Chelghoum Laid (84)">84|ACTEL Chelghoum Laid (84)
+                                            </option>
+                                            <option value="K3|ACTEL REGGANE">K3|ACTEL REGGANE</option>
+                                            <option value="K6|ACTEL Tidjit (K6)">K6|ACTEL Tidjit (K6)</option>
+                                            <option value="07|ACTEL Tipaza (07)">07|ACTEL Tipaza (07)</option>
+                                            <option value="75|ACTEL Coudiat (75)">75|ACTEL Coudiat (75)</option>
+                                            <option value="26|ACTEL Bechar (26)">26|ACTEL Bechar (26)</option>
+                                            <option value="44|ACTEL Ouargla (44)">44|ACTEL Ouargla (44)</option>
+                                            <option value="17|ACTEL El Kala (17)">17|ACTEL El Kala (17)</option>
+                                            <option value="30|ACTEL Tébéssa (30)">30|ACTEL Tébéssa (30)</option>
+                                            <option value="51|ACTEL Tamanrasset (51)">51|ACTEL Tamanrasset (51)</option>
+                                            <option value="36|ACTEL Bouira (36)">36|ACTEL Bouira (36)</option>
+                                            <option value="72|ACTEL Rouiba (72)">72|ACTEL Rouiba (72)</option>
+                                            <option value="57|ACTEL Khenchela (57)">57|ACTEL Khenchela (57)</option>
+                                            <option value="04|ACTEL Oran-Ibn Rochd (04)">04|ACTEL Oran-Ibn Rochd (04)
+                                            </option>
+                                            <option value="H1|ACTEL Ain Naadja (H1)">H1|ACTEL Ain Naadja (H1)</option>
+                                            <option value="O9|ACTEL El Hodna (O9)">O9|ACTEL El Hodna (O9)</option>
+                                            <option value="80|ACTEL Cherchell (80)">80|ACTEL Cherchell (80)</option>
+                                            <option value="74|ACTEL Boufarik (74)">74|ACTEL Boufarik (74)</option>
+                                            <option value="M1|ACTEL EL Meniaa (M1)">M1|ACTEL EL Meniaa (M1)</option>
+                                            <option value="37|ACTEL Ksar El Boukhari (37)">37|ACTEL Ksar El Boukhari
+                                                (37)</option>
+                                            <option value="60|ACTEL Rostomia (60)">60|ACTEL Rostomia (60)</option>
+                                            <option value="50|ACTEL Adrar (50)">50|ACTEL Adrar (50)</option>
+                                            <option value="Z2|1er NOVEMBRE sidi bel abbes Z2">Z2|1er NOVEMBRE sidi bel
+                                                abbes Z2</option>
+                                            <option value="A3|ACTEL Mohammadia (A3)">A3|ACTEL Mohammadia (A3)</option>
+                                            <option value="O3|ACTEL Merouana (O3)">O3|ACTEL Merouana (O3)</option>
+                                            <option value="06|ACTEL Oran-El Makkari (06)">06|ACTEL Oran-El Makkari (06)
+                                            </option>
+                                            <option value="H5|ACTEL Birtouta (H5)">H5|ACTEL Birtouta (H5)</option>
+                                            <option value="A6|ACTEL Kolea (A6)">A6|ACTEL Kolea (A6)</option>
+                                            <option value="L9|ACTEL Zighoud Youcef (L9)">L9|ACTEL Zighoud Youcef (L9)
+                                            </option>
+                                            <option value="C3|ACTEL Setif 08 Mai 1945 (C3)">C3|ACTEL Setif 08 Mai 1945
+                                                (C3)</option>
+                                            <option value="C2|ACTEL Ali Mendjelli (C2)">C2|ACTEL Ali Mendjelli (C2)
+                                            </option>
+                                            <option value="61|ACTEL Aissat Idir (61)">61|ACTEL Aissat Idir (61)</option>
+                                            <option value="N2|ACTEL El Intissar(N2)">N2|ACTEL El Intissar(N2)</option>
+                                            <option value="92|ACTEL Collo (92)">92|ACTEL Collo (92)</option>
+                                            <option value="01|ACTEL El Bouni (01)">01|ACTEL El Bouni (01)</option>
+                                            <option value="48|ACTEL Ghardaia (48)">48|ACTEL Ghardaia (48)</option>
+                                            <option value="03|Yaghmouracen Ben Mhidi(03)">03|Yaghmouracen Ben Mhidi(03)
+                                            </option>
+                                            <option value="S3|ACTEL Sebdou (S3)">S3|ACTEL Sebdou (S3)</option>
+                                            <option value="05|ACTEL Tizi-Ouzou (05)">05|ACTEL Tizi-Ouzou (05)</option>
+                                            <option value="15|ACTEL Mostaganem (15)">15|ACTEL Mostaganem (15)</option>
+                                            <option value="69|ACTEL Bir Mourad Rais (69)">69|ACTEL Bir Mourad Rais (69)
+                                            </option>
+                                            <option value="76|ACTEL Daksi (76)">76|ACTEL Daksi (76)</option>
+                                            <option value="K5|ACTEL AHMED MEDEGHRI(K5)">K5|ACTEL AHMED MEDEGHRI(K5)
+                                            </option>
+                                            <option value="56|ACTEL Tindouf (56)">56|ACTEL Tindouf (56)</option>
+                                            <option value="23|ACTEL 20 aout 1955(23)">23|ACTEL 20 aout 1955(23)</option>
+                                            <option value="Z4|ACTEL Bab Ezzouar (Z4)">Z4|ACTEL Bab Ezzouar (Z4)</option>
+                                            <option value="21|ACTEL Souk Ahras (21)">21|ACTEL Souk Ahras (21)</option>
+                                            <option value="09|ACTEL Tlemcen (09)">09|ACTEL Tlemcen (09)</option>
+                                            <option value="7A|ACTEL BORDJ BADJI MOKHTAR (7A)">7A|ACTEL BORDJ BADJI
+                                                MOKHTAR (7A)</option>
+                                        </select>
+                                        <label for="actel-code">Actel Code</label>
+                                    </div>
+                                </div>
+
+                                <!-- Colonne 3 - DOT Abonnement -->
+                                <div class="col-md-3">
+                                    <div class="form-floating">
+                                        <select name="dot_abonnement" class="form-select" id="dot-abonnement">
+                                            <option value="" disabled selected>Choisir une wilaya</option>
+                                            <option value="MEDEA">MEDEA</option>
+                                            <option value="BOUMERDES">BOUMERDES</option>
+                                            <option value="ALGER EST">ALGER EST</option>
+                                            <option value="BLIDA">BLIDA</option>
+                                            <option value="SETIF">SETIF</option>
+                                            <option value="EL TAREF">EL TAREF</option>
+                                            <option value="ALGER OUEST">ALGER OUEST</option>
+                                            <option value="BEJAIA">BEJAIA</option>
+                                            <option value="TIZI OUZOU">TIZI OUZOU</option>
+                                            <option value="BATNA">BATNA</option>
+                                            <option value="JIJEL">JIJEL</option>
+                                            <option value="OUARGLA">OUARGLA</option>
+                                            <option value="MOSTAGANEM">MOSTAGANEM</option>
+                                            <option value="AIN TEMOUCHENT">AIN TEMOUCHENT</option>
+                                            <option value="SIDI BEL ABBES">SIDI BEL ABBES</option>
+                                            <option value="MILA">MILA</option>
+                                            <option value="ADRAR">ADRAR</option>
+                                            <option value="TIPAZA">TIPAZA</option>
+                                            <option value="CONSTANTINE">CONSTANTINE</option>
+                                            <option value="BECHAR">BECHAR</option>
+                                            <option value="TEBESSA">TEBESSA</option>
+                                            <option value="TAMANRASSET">TAMANRASSET</option>
+                                            <option value="BOUIRA">BOUIRA</option>
+                                            <option value="KHENCHELA">KHENCHELA</option>
+                                            <option value="ORAN">ORAN</option>
+                                            <option value="ALGER CENTRE">ALGER CENTRE</option>
+                                            <option value="MSILA">MSILA</option>
+                                            <option value="GHARDAIA">GHARDAIA</option>
+                                            <option value="SKIKDA">SKIKDA</option>
+                                            <option value="RELIZANE">RELIZANE</option>
+                                            <option value="ANNABA">ANNABA</option>
+                                            <option value="TLEMCEN">TLEMCEN</option>
+                                            <option value="SAIDA">SAIDA</option>
+                                            <option value="TINDOUF">TINDOUF</option>
+                                            <option value="SOUK AHRAS">SOUK AHRAS</option>
+                                            <option value="DJELFA">DJELFA</option>
+                                            <option value="BISKRA">BISKRA</option>
+                                            <option value="OUM EL BOUAGHI">OUM EL BOUAGHI</option>
+                                            <option value="EL OUED">EL OUED</option>
+                                            <option value="MASCARA">MASCARA</option>
+                                            <option value="LAGHOUAT">LAGHOUAT</option>
+                                            <option value="AIN DEFLA">AIN DEFLA</option>
+                                            <option value="BORDJ BOU ARRERIDJ">BORDJ BOU ARRERIDJ</option>
+                                            <option value="GUELMA">GUELMA</option>
+                                            <option value="NAAMA">NAAMA</option>
+                                            <option value="ILLIZI">ILLIZI</option>
+                                            <option value="CHLEF">CHLEF</option>
+                                            <option value="EL BAYADH">EL BAYADH</option>
+                                            <option value="TISSEMSILT">TISSEMSILT</option>
+                                            <option value="TIARET">TIARET</option>
+                                            <option value="TIMIMOUNE">TIMIMOUNE</option>
+                                            <option value="BENI ABBES">BENI ABBES</option>
+                                            <option value="BORDJ BADJI MOKHTAR">BORDJ BADJI MOKHTAR</option>
+                                        </select>
+                                        <label for="dot-abonnement">DOT Abonnement</label>
+                                    </div>
+                                </div>
+
+                                <!-- Colonne 4 - Customer Type -->
+                                <div class="col-md-3">
+                                    <div class="form-floating">
+                                        <select name="customer_type" class="form-select" id="customer-type">
+                                            <option value="Ordinary customer">Client ordinaire</option>
+                                            <option value="Exceptional customer">Client exceptionnel</option>
+                                            <option value="Company">Entreprise</option>
+                                            <option value="Officially agreed professional customer">Client professionnel
+                                                agréé</option>
+                                        </select>
+                                        <label for="customer-type">Type de client</label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Deuxième ligne - 4 colonnes -->
+                            <div class="row g-3 mb-3">
+                                <!-- Colonne 1 - Telecom Type -->
+                                <div class="col-md-3">
+                                    <div class="form-floating">
+                                        <select name="internet_service" class="form-select" id="internet-service">
+                                            <option value="xDSL">xDSL</option>
+                                            <option value="FTTH">FTTH</option>
+                                        </select>
+                                        <label for="internet-service">Service Internet</label>
+                                    </div>
+                                </div>
+
+                                <!-- Colonne 2 - Offer Name -->
+                                <div class="col-md-3">
+                                    <div class="form-floating">
+                                        <select name="offer_name" class="form-select" id="offer-name" required>
+                                            <option value="">-- Sélectionner un offre --</option>
+                                            <option value="10M'_ADSL_Prepaid_indiviual">10M'_ADSL_Prepaid_indiviual
+                                            </option>
+                                            <option value="Idoom ADSL 20M Professionnel">Idoom ADSL 20M Professionnel
+                                            </option>
+                                            <option value="15M_ADSL_Prepaid_indiviual">15M_ADSL_Prepaid_indiviual
+                                            </option>
+                                            <option value="20M'_ADSL_Prepaid_indiviual">20M'_ADSL_Prepaid_indiviual
+                                            </option>
+                                            <option value="PACK Idoom ADSL 10M PRO">PACK Idoom ADSL 10M PRO</option>
+                                            <option value="FTTc-b_10M'">FTTc-b_10M'</option>
+                                            <option value="PACK Idoom ADSL  Moohtarif plus 10M">PACK Idoom ADSL
+                                                Moohtarif plus 10M</option>
+                                            <option value="PACK Idoom ADSL 10M' PRO">PACK Idoom ADSL 10M' PRO</option>
+                                            <option value="20M_ADSL_Prepaid_indiviual">20M_ADSL_Prepaid_indiviual
+                                            </option>
+                                            <option value="PACK Idoom  Fibre B/C  Moohtarif plus 20M">PACK Idoom Fibre
+                                                B/C Moohtarif plus 20M</option>
+                                            <option value="Idoom VDSL 50M">Idoom VDSL 50M</option>
+                                            <option value="Idoom ADSL 15M Moohtarif">Idoom ADSL 15M Moohtarif</option>
+                                            <option value="PACK Idoom  Fibre B/C  Moohtarif plus 10M">PACK Idoom Fibre
+                                                B/C Moohtarif plus 10M</option>
+                                            <option value="FTTc-b_15M">FTTc-b_15M</option>
+                                            <option value="PACK Idoom ADSL  Moohtarif plus 20M">PACK Idoom ADSL
+                                                Moohtarif plus 20M</option>
+                                            <option value="Idoom ADSL 15M Professionnel">Idoom ADSL 15M Professionnel
+                                            </option>
+                                            <option value="10M_ADSL_Prepaid_corporate'">10M_ADSL_Prepaid_corporate'
+                                            </option>
+                                            <option value="Idoom ADSL 20M Moohtarif">Idoom ADSL 20M Moohtarif</option>
+                                            <option value="10M''_ADSL_Prepaid_indiviual''">
+                                                10M''_ADSL_Prepaid_indiviual''</option>
+                                            <option value="FTTc-b_20M'">FTTc-b_20M'</option>
+                                            <option value="PACK_Idoom_ADSL_SA_20M">PACK_Idoom_ADSL_SA_20M</option>
+                                            <option value="Idoom VDSL 50M Professionnel">Idoom VDSL 50M Professionnel
+                                            </option>
+                                            <option value="Idoom ADSL 20M Ecole primaire">Idoom ADSL 20M Ecole primaire
+                                            </option>
+                                            <option value="SHDSL 10M_IP">SHDSL 10M_IP</option>
+                                            <option value="Idoom VDSL 100M Professionnel">Idoom VDSL 100M Professionnel
+                                            </option>
+                                            <option value="Idoom ADSL 20M CEM et Lycée">Idoom ADSL 20M CEM et Lycée
+                                            </option>
+                                            <option value="FTTc-b_20M">FTTc-b_20M</option>
+                                            <option value="Idoom VDSL 50M CEM et Lycée">Idoom VDSL 50M CEM et Lycée
+                                            </option>
+                                            <option value="Idoom VDSL 100M">Idoom VDSL 100M</option>
+                                            <option value="Idoom VDSL 50M Moohtarif">Idoom VDSL 50M Moohtarif</option>
+                                            <option value="PACK Idoom ADSL 10M'  PRO">PACK Idoom ADSL 10M' PRO</option>
+                                            <option value="20M_ADSL_Prepaid_corporate">20M_ADSL_Prepaid_corporate
+                                            </option>
+                                            <option value="10M' ADSL_Prepaid_indiviual">10M' ADSL_Prepaid_indiviual
+                                            </option>
+                                            <option value="10M_ADSL_Prepaid_R/C">10M_ADSL_Prepaid_R/C</option>
+                                            <option value="PACK ooredoo ADSL 10M PRO">PACK ooredoo ADSL 10M PRO</option>
+                                            <option value="PACK Idoom FTTB/C 10M PRO">PACK Idoom FTTB/C 10M PRO</option>
+                                            <option value="FTTH_100M_Prepaid_indiviual">FTTH_100M_Prepaid_indiviual
+                                            </option>
+                                            <option value="FTTH 120M Prepaid individual">FTTH 120M Prepaid individual
+                                            </option>
+                                            <option value="FTTH_10M'_Prepaid_indiviual">FTTH_10M'_Prepaid_indiviual
+                                            </option>
+                                            <option value="FTTH 1/2G Prepaid individual">FTTH 1/2G Prepaid individual
+                                            </option>
+                                            <option value="FTTH_10M' PROMO 3MOIS_ONT">FTTH_10M' PROMO 3MOIS_ONT</option>
+                                        </select>
+                                        <label for="offer-name">Nom de l'offre</label>
+                                    </div>
+                                </div>
+
+                                <!-- Colonne 3 - Monthly Charges -->
+                                <div class="col-md-3">
+                                    <div class="form-floating">
+                                        <input type="number" step="0.01" name="monthly_charges" class="form-control"
+                                            id="monthly-charges" required>
+                                        <label for="monthly-charges">Charges Mensuelles (DA)</label>
+                                    </div>
+                                </div>
+
+                                <!-- Colonne 4 - Postal Code -->
+                                <div class="col-md-3">
+                                    <div class="form-floating">
+                                        <input type="text" name="postal_code" class="form-control" id="postal-code"
+                                            required>
+                                        <label for="postal-code">Code Postal</label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Troisième ligne - 4 colonnes -->
+                            <div class="row g-3 mb-3">
+                                <!-- Colonne 1 - Gender -->
+                                <div class="col-md-3">
+                                    <div class="form-floating">
+                                        <select name="gender" class="form-select" id="gender">
+                                            <option value="Homme">Homme</option>
+                                            <option value="Femme">Femme</option>
+                                        </select>
+                                        <label for="gender">Genre</label>
+                                    </div>
+                                </div>
+
+                                <!-- Colonne 2 - Age -->
+                                <div class="col-md-3">
+                                    <div class="form-floating">
+                                        <input type="number" name="age" class="form-control" id="age" min="18" max="100"
+                                            required>
+                                        <label for="age">Âge</label>
+                                    </div>
+                                </div>
+
+                                <!-- Colonne 3 - Situation -->
+                                <div class="col-md-3">
+                                    <div class="form-floating">
+                                        <select name="situation" class="form-select" id="situation">
+                                            <option value="Célibataire">Célibataire</option>
+                                            <option value="Marié(e)">Marié(e)</option>
+                                            <option value="Divorcé">Divorcé</option>
+                                            <option value="Inconnu">Inconnu</option>
+                                        </select>
+                                        <label for="situation">Situation</label>
+                                    </div>
+                                </div>
+
+                                <!-- Colonne 4 - Tenure -->
+                                <div class="col-md-3">
+                                    <div class="form-floating">
+                                        <input type="number" name="tenure" class="form-control" id="tenure" min="0"
+                                            max="240" required>
+                                        <label for="tenure">Ancienneté (mois)</label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Quatrième ligne - 4 colonnes -->
+                            <div class="row g-3 mb-3">
+                                <!-- Colonne 1 - Resignation Reason -->
+                                <div class="col-md-3">
+                                    <div class="form-floating">
+                                        <select name="resignation_reason" class="form-select" id="resignation-reason">
+                                            <option value="Raisons financières">Raisons financières</option>
+                                            <option value="Déménagement / Zone non équipée">Déménagement / Zone non
+                                                équipée</option>
+                                            <option value="Modem défectueux (FTTH)">Modem défectueux (FTTH)</option>
+                                            <option value="Cas de décès">Cas de décès</option>
+                                            <option value="Pas besoin">Pas besoin</option>
+                                            <option value="Possède une autre ligne">Possède une autre ligne</option>
+                                            <option value="Radiation du registre de commerce (KMS)">Radiation du
+                                                registre de commerce (KMS)</option>
+                                            <option
+                                                value="Suite à un dérangement répétitif / Problème de qualité de service">
+                                                Suite à un dérangement répétitif / Problème de qualité de service
+                                            </option>
+                                            <option value="Saturation réseau (satisfaction d'autres clients)">Saturation
+                                                réseau (satisfaction d'autres clients)</option>
+                                            <option value="Saturation réseau (satisfaction d'autres clients)">Non
+                                            </option>
+
+                                        </select>
+                                        <label for="resignation-reason">Raison de résiliation</label>
+                                    </div>
+                                </div>
+
+                                <!-- Colonne 2 - Total Charges -->
+                                <div class="col-md-3">
+                                    <div class="form-floating">
+                                        <input type="number" step="0.01" name="total_charges" class="form-control"
+                                            id="total-charges" required>
+                                        <label for="total-charges">Charges Totales (DA)</label>
+                                    </div>
+                                </div>
+
+                                <!-- Colonne 3 - Contract Type -->
+                                <div class="col-md-3">
+                                    <div class="form-floating">
+                                        <select name="contract_type" class="form-select" id="contract-type">
+                                            <option value="Mensuel">Mensuel</option>
+                                            <option value="Trimestriel">Trimestriel</option>
+                                            <option value="Annuel">Annuel</option>
+                                            <option value="Personnalisé">Personnalisé</option>
+                                        </select>
+                                        <label for="contract-type">Type de Contrat</label>
+                                    </div>
+                                </div>
+
+                                <!-- Colonne 4 - Local Calls -->
+                                <div class="col-md-3">
+                                    <div class="form-floating">
+                                        <input type="number" name="local_calls" class="form-control" id="local-calls"
+                                            min="0" required>
+                                        <label for="local-calls">Appels Locaux</label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Cinquième ligne - 4 colonnes -->
+                            <div class="row g-3 mb-3">
+                                <!-- Colonne 1 - International Minutes -->
+                                <div class="col-md-3">
+                                    <div class="form-floating">
+                                        <input type="number" name="international_minutes" class="form-control"
+                                            id="international-minutes" min="0" required>
+                                        <label for="international-minutes">Minutes Internationales</label>
+                                    </div>
+                                </div>
+
+                                <!-- Colonne 2 - Local Minutes -->
+                                <div class="col-md-3">
+                                    <div class="form-floating">
+                                        <input type="number" name="local_minutes" class="form-control"
+                                            id="local-minutes" min="0" required>
+                                        <label for="local-minutes">Minutes Locales</label>
+                                    </div>
+                                </div>
+
+                                <!-- Colonne 3 - International Calls -->
+                                <div class="col-md-3">
+                                    <div class="form-floating">
+                                        <input type="number" name="international_calls" class="form-control"
+                                            id="international-calls" min="0" required>
+                                        <label for="international-calls">Appels Internationaux</label>
+                                    </div>
+                                </div>
+
+                                <!-- Colonne 4 - Additional Fees -->
+                                <div class="col-md-3">
+                                    <div class="form-floating">
+                                        <input type="number" step="0.01" name="additional_fees" class="form-control"
+                                            id="additional-fees" min="0" required>
+                                        <label for="additional-fees">Frais Internationaux Supp. (DA)</label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Sixième ligne - 1 colonne -->
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-3">
+                                    <div class="form-floating">
+                                        <input type="number" step="0.1" name="monthly_downloads" class="form-control"
+                                            id="monthly-downloads" min="0" required>
+                                        <label for="monthly-downloads">Téléchargements (Go/mois)</label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="text-center mt-4">
+                                <button type="submit" class="btn btn-primary btn-lg px-5">
+                                    <i class="fas fa-chart-line me-2"></i>Prédire
+                                </button>
+                            </div>
+                        </form>
+
+                        <!-- Résultat de prédiction -->
+                        <div class="prediction-result mt-4 p-4 rounded"
+                            style="background-color: #f8f9fa; display: none;">
+                            <!-- Contenu généré dynamiquement par JavaScript -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Analyze Section -->
+            <div id="analyze-section" class="content-section d-none">
+                <div class="card mb-4">
+                    <div class="card-header bg-success text-white">
+                        <i class="fas fa-chart-pie me-2"></i>Analyse des motifs de résiliation
+                    </div>
+                    <div class="card-body">
+                        <div class="card mb-4">
+                            <div class="card-header bg-success text-white">
+                                <i class="fas fa-database me-2"></i>Charger un dataset de résiliations
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="dataset-select" class="form-label">Sélectionner un dataset
+                                                existant</label>
+                                            <select class="form-select" id="dataset-select">
+                                                <option value="">-- Sélectionner --</option>
+                                                {% for file in files %}
+                                                <option value="{{ file }}">{{ file }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button id="load-dataset-btn" class="btn btn-primary">
+                                    <i class="fas fa-spinner fa-spin d-none"></i>
+                                    Charger le dataset
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <h5>Répartition des motifs</h5>
+                                <canvas id="reason-chart" style="height: 300px;"></canvas>
+                            </div>
+                            <div class="col-md-6">
+                                <h5>Tendance temporelle</h5>
+                                <canvas id="trend-chart" style="height: 300px;"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12">
+                                <h5>Détails des clients à risque</h5>
+                                <div class="table-responsive">
+                                    <table class="table table-striped table-hover" id="clients-table">
+                                        <thead>
+                                            <tr>
+                                                <th>ID Client</th>
+                                                <th>Motif</th>
+                                                <th>Probabilité</th>
+                                                <th>Prédit</th>
+                                                <th>Ancienneté</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <!-- Will be populated by JavaScript -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Solutions Section -->
+            <div id="solutions-section" class="content-section d-none">
+                <div class="card mb-4">
+                    <div class="card-header bg-success text-white">
+                        <i class="fas fa-lightbulb me-2"></i>Solutions recommandées
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5>Solutions par motif de résiliation</h5>
+                                <button class="btn btn-sm btn-outline-primary" id="export-solutions-btn">
+                                    <i class="fas fa-download me-1"></i>Exporter
+                                </button>
+                            </div>
+                            <div id="solutions-accordion" class="accordion">
+                                <!-- Will be populated by JavaScript -->
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <h5>Impact des solutions proposées</h5>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div id="impact-chart" style="height: 250px;"></div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="card bg-light">
+                                        <div class="card-body">
+                                            <h6><i class="fas fa-chart-line me-2"></i>Projection de réduction du churn
+                                            </h6>
+                                            <div id="reduction-stats" class="d-flex justify-content-around text-center">
+                                                <div>
+                                                    <div class="fs-3 text-danger">15%</div>
+                                                    <small class="text-muted">Réduction actuelle</small>
+                                                </div>
+                                                <div>
+                                                    <div class="fs-3 text-warning">25%</div>
+                                                    <small class="text-muted">Potentiel à 3 mois</small>
+                                                </div>
+                                                <div>
+                                                    <div class="fs-3 text-success">40%</div>
+                                                    <small class="text-muted">Potentiel à 6 mois</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- History Section -->
+            <div id="history-section" class="content-section d-none">
+                <div class="card mb-4">
+                    <div class="card-header bg-success text-white">
+                        <i class="fas fa-history me-2"></i>Historique des analyses
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped" id="history-table">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Dataset</th>
+                                        <th>Clients analysés</th>
+                                        <th>Résultats</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Will be populated by JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Client Details Modal -->
+<div class="modal fade" id="clientModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">Détails du client</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                    aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Informations client</h6>
+                        <table class="table table-sm">
+                            <tbody id="client-info">
+                                <!-- Will be populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Analyse de résiliation</h6>
+                        <div id="client-analysis-chart" style="height: 200px;"></div>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <h6>Solution recommandée</h6>
+                    <div class="card bg-light">
+                        <div class="card-body" id="client-solution">
+                            <!-- Will be populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- SHAP Explanation Modal -->
+<div class="modal fade" id="shapModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title">Analyse et Solutions</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                    aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Le contenu sera généré dynamiquement par JavaScript -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

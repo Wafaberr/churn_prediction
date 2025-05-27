@@ -1,0 +1,1439 @@
+{% extends "layout.html" %}
+
+{% block head_extra %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analyse des Résiliations - Prévision Temporelle</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/statsmodels.js@0.4/dist/statsmodels.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prophet-js@1.0/dist/prophet.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tensorflow@2.8/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lstm-forecaster@1.2/dist/lstm-forecaster.min.js"></script>
+
+    <style>
+        #forecastDetails {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.forecast-table th {
+    position: sticky;
+    top: 0;
+    background: white;
+}
+
+.card {
+    transition: all 0.3s ease;
+}
+
+.card:hover {
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+}
+        #forecastChart {
+    height: 400px !important; /* Hauteur fixe */
+    width: 100% !important;   /* Largeur responsive */
+}
+      
+        .card {
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            border: none;
+        }
+        .card-header {
+            background-color: #3498db;
+            color: white;
+            font-weight: bold;
+        }
+        .nav-tabs .nav-link.active {
+            font-weight: bold;
+            border-bottom: 3px solid #3498db;
+        }
+        .stat-card {
+            text-align: center;
+            padding: 15px;
+            border-radius: 5px;
+            color: white;
+        }
+        .stat-card.primary {
+            background-color: #3498db;
+        }
+        .stat-card.success {
+            background-color: #2ecc71;
+        }
+        .stat-card.warning {
+            background-color: #f39c12;
+        }
+        .stat-card.danger {
+            background-color: #e74c3c;
+        }
+        #mainChart {
+            height: 400px;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="header bg-primary text-white p-4 mb-4 rounded">
+    <div class="d-flex justify-content-between align-items-center">
+        <h1><i class="fas fa-chart-line me-2"></i>Analyse des Résiliations xDSL & FTTx</h1>
+        <span class="badge bg-light text-dark fs-6">v1.0</span>
+    </div>
+    <p class="mb-0">Outils de prévision par série temporelle</p>
+</div>
+
+    <div class="container">
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="stat-card primary">
+                    <h5>Total Résiliations xDSL</h5>
+                    <h3 id="total-xdsl">-</h3>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card success">
+                    <h5>Total Résiliations FTTx</h5>
+                    <h3 id="total-fttx">-</h3>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card warning">
+                    <h5>Moyenne Journalière xDSL</h5>
+                    <h3 id="avg-xdsl">-</h3>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card danger">
+                    <h5>Moyenne Journalière FTTx</h5>
+                    <h3 id="avg-fttx">-</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                Visualisation des Données
+            </div>
+            <div class="card-body">
+                <ul class="nav nav-tabs" id="myTab" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="combined-tab" data-bs-toggle="tab" data-bs-target="#combined" type="button" role="tab">Données Combinées</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="xdsl-tab" data-bs-toggle="tab" data-bs-target="#xdsl" type="button" role="tab">xDSL</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="fttx-tab" data-bs-toggle="tab" data-bs-target="#fttx" type="button" role="tab">FTTx</button>
+                    </li>
+                </ul>
+                <div class="tab-content mt-3">
+                    <div class="tab-pane fade show active" id="combined" role="tabpanel">
+                        <canvas id="combinedChart"></canvas>
+                    </div>
+                    <div class="tab-pane fade" id="xdsl" role="tabpanel">
+                        <canvas id="xdslChart"></canvas>
+                    </div>
+                    <div class="tab-pane fade" id="fttx" role="tabpanel">
+                        <canvas id="fttxChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        Paramètres de Prévision
+                    </div>
+                    <div class="card-body">
+                        <form id="forecastForm">
+                           <div class="mb-3">
+    <label for="modelType" class="form-label">Modèle de Prévision</label>
+    <select class="form-select" id="modelType">
+        <option value="arima">ARIMA</option>
+        <option value="sarima">SARIMA (Saisonnalité)</option>
+        <option value="prophet">Facebook Prophet</option>
+        <option value="lstm">LSTM</option>
+        <option value="ets">ETS (Error-Trend-Seasonality)</option>
+    </select>
+</div>
+                            <div class="mb-3">
+                                <label for="forecastPeriod" class="form-label">Période de Prévision (jours)</label>
+                                <input type="number" class="form-control" id="forecastPeriod" value="30" min="7" max="365">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Technologie</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="xdslCheck" checked>
+                                    <label class="form-check-label" for="xdslCheck">xDSL</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="fttxCheck" checked>
+                                    <label class="form-check-label" for="fttxCheck">FTTx</label>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="confidenceLevel" class="form-label">Niveau de Confiance</label>
+                                <select class="form-select" id="confidenceLevel">
+                                    <option value="80">80%</option>
+                                    <option value="90">90%</option>
+                                    <option value="95" selected>95%</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Exécuter la Prévision</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        Résultats de la Prévision
+                    </div>
+                    <div class="card-body">
+                        <div id="forecastResults">
+                            <p class="text-muted">Sélectionnez des paramètres et exécutez une prévision pour voir les résultats.</p>
+                        </div>
+                        <div class="mt-3" id="forecastMetrics"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+                        <canvas id="forecastChart"></canvas>
+
+        <div class="card mt-4">
+    <div class="card-header">
+        Analyse des Tendances
+    </div>
+    <div class="card-body">
+        <ul class="nav nav-tabs" id="trendTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="xdsl-trend-tab" data-bs-toggle="tab" data-bs-target="#xdsl-trend" type="button" role="tab">xDSL</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="fttx-trend-tab" data-bs-toggle="tab" data-bs-target="#fttx-trend" type="button" role="tab">FTTx</button>
+            </li>
+        </ul>
+        <div class="tab-content mt-3">
+            <div class="tab-pane fade show active" id="xdsl-trend" role="tabpanel">
+                <div class="row">
+                    <div class="col-md-12">
+                        <h5>Tendance Saisonnière xDSL</h5>
+                        <canvas id="xdslSeasonalityChart"></canvas>
+                    </div>
+                    <div class="col-md-12 mt-4">
+                        <h5>Décomposition des Séries Temporelles xDSL</h5>
+                        <canvas id="xdslDecompositionChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="tab-pane fade" id="fttx-trend" role="tabpanel">
+                <div class="row">
+                    <div class="col-md-12">
+                        <h5>Tendance Saisonnière FTTx</h5>
+                        <canvas id="fttxSeasonalityChart"></canvas>
+                    </div>
+                    <div class="col-md-12 mt-4">
+                        <h5>Décomposition des Séries Temporelles FTTx</h5>
+                        <canvas id="fttxDecompositionChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+    </div>
+
+    <footer class="bg-light mt-5 py-3">
+        <div class="container text-center">
+            <p class="text-muted">Système d'Analyse des Résiliations - © 2025</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/moment@2.29.1/moment.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment@1.0.0/dist/chartjs-adapter-moment.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@1.2.1/dist/chartjs-plugin-zoom.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@1.0.2/dist/chartjs-plugin-annotation.min.js"></script>
+    <!-- Ajoutez ces lignes dans le bloc head_extra -->
+    <script src="https://cdn.jsdelivr.net/npm/regression@2.0.1/dist/regression.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <script>
+        // Sample data processing (would be replaced with actual data processing)
+document.addEventListener('DOMContentLoaded', function() {
+    // Calculate summary statistics
+    const xdslData = processSheetData(xdslSheetData);
+    const fttxData = processSheetData(fttxSheetData);
+    console.log("xDSL Data:", xdslSheetData);
+    console.log("FTTx Data:", fttxSheetData);
+    
+    document.getElementById('total-xdsl').textContent = xdslData.total;
+    document.getElementById('total-fttx').textContent = fttxData.total;
+    document.getElementById('avg-xdsl').textContent = xdslData.avg.toFixed(2);
+    document.getElementById('avg-fttx').textContent = fttxData.avg.toFixed(2);
+    
+    // Initialize charts
+    initCombinedChart(xdslData, fttxData);
+    initXDSLChart(xdslData);
+    initFTTxChart(fttxData);
+    
+    // Initialize trend analysis
+    initTrendAnalysis();
+    
+    // Form submission
+    document.getElementById('forecastForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        runForecast();
+    });
+    // Ajoutez des écouteurs d'événements pour les changements de paramètres
+document.getElementById('modelType').addEventListener('change', runForecast);
+document.getElementById('forecastPeriod').addEventListener('change', runForecast);
+document.getElementById('confidenceLevel').addEventListener('change', runForecast);
+document.getElementById('xdslCheck').addEventListener('change', runForecast);
+document.getElementById('fttxCheck').addEventListener('change', runForecast);
+});
+        
+        function processSheetData(data) {
+            let total = 0;
+            const dates = [];
+            const values = [];
+            
+            for (let i = 1; i < data.length; i++) {
+                const row = data[i];
+                const value = parseInt(row[1]);
+                total += value;
+                dates.push(new Date(row[0]));
+                values.push(value);
+            }
+            
+            return {
+                dates: dates,
+                values: values,
+                total: total,
+                avg: total / values.length
+            };
+        }
+        
+        function initCombinedChart(xdslData, fttxData) {
+            const ctx = document.getElementById('combinedChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: xdslData.dates,
+                    datasets: [
+                        {
+                            label: 'Résiliations xDSL',
+                            data: xdslData.values,
+                            borderColor: 'rgba(52, 152, 219, 1)',
+                            backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                            tension: 0.1
+                        },
+                        {
+                            label: 'Résiliations FTTx',
+                            data: fttxData.values,
+                            borderColor: 'rgba(46, 204, 113, 1)',
+                            backgroundColor: 'rgba(46, 204, 113, 0.1)',
+                            tension: 0.1
+                        }
+                    ]
+                },
+                options: getChartOptions('Résiliations Combinées xDSL et FTTx')
+            });
+        }
+        
+        function initXDSLChart(data) {
+            const ctx = document.getElementById('xdslChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.dates,
+                    datasets: [{
+                        label: 'Résiliations xDSL',
+                        data: data.values,
+                        borderColor: 'rgba(52, 152, 219, 1)',
+                        backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                        tension: 0.1
+                    }]
+                },
+                options: getChartOptions('Résiliations xDSL')
+            });
+        }
+        
+        function initFTTxChart(data) {
+            const ctx = document.getElementById('fttxChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.dates,
+                    datasets: [{
+                        label: 'Résiliations FTTx',
+                        data: data.values,
+                        borderColor: 'rgba(46, 204, 113, 1)',
+                        backgroundColor: 'rgba(46, 204, 113, 0.1)',
+                        tension: 0.1
+                    }]
+                },
+                options: getChartOptions('Résiliations FTTx')
+            });
+        }
+        
+        function getChartOptions(title) {
+            return {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: title
+                    },
+                    zoom: {
+                        zoom: {
+                            wheel: {
+                                enabled: true
+                            },
+                            pinch: {
+                                enabled: true
+                            },
+                            mode: 'xy'
+                        },
+                        pan: {
+                            enabled: true,
+                            mode: 'xy'
+                        }
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false
+                    }
+                },
+                scales: {
+                    x: {
+                        type: 'time',
+                        time: {
+                            unit: 'month'
+                        },
+                        title: {
+                            display: true,
+                            text: 'Date'
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Nombre de Résiliations'
+                        }
+                    }
+                },
+                interaction: {
+                    intersect: false,
+                    mode: 'nearest'
+                }
+            };
+        }
+        
+// Ajoutez ces fonctions dans la section script
+function initTrendAnalysis() {
+    // Analyse de tendance pour xDSL
+    const xdslData = processSheetData(xdslSheetData);
+    const fttxData = processSheetData(fttxSheetData);
+    
+    renderSeasonalityChart('xdslSeasonalityChart', xdslData, 'Tendance Saisonnière xDSL');
+    renderDecompositionChart('xdslDecompositionChart', xdslData, 'Décomposition xDSL');
+    
+    renderSeasonalityChart('fttxSeasonalityChart', fttxData, 'Tendance Saisonnière FTTx');
+    renderDecompositionChart('fttxDecompositionChart', fttxData, 'Décomposition FTTx');
+}
+
+function renderSeasonalityChart(canvasId, data, title) {
+    const ctx = document.getElementById(canvasId).getContext('2d');
+    
+    // Calcul des moyennes hebdomadaires pour la saisonnalité
+    const weeklyAverages = calculateWeeklyAverages(data);
+    
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'],
+            datasets: [{
+                label: 'Moyenne des résiliations par jour de semaine',
+                data: weeklyAverages,
+                backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                title: {
+                    display: true,
+                    text: title
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `${context.dataset.label}: ${context.raw.toFixed(2)}`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Nombre moyen de résiliations'
+                    }
+                }
+            }
+        }
+    });
+}
+
+function calculateWeeklyAverages(data) {
+    const days = [[], [], [], [], [], [], []]; // 0: Dimanche, 1: Lundi, ..., 6: Samedi
+    
+    for (let i = 0; i < data.dates.length; i++) {
+        const dayOfWeek = data.dates[i].getDay(); // 0-6 (Dimanche-Samedi)
+        days[dayOfWeek].push(data.values[i]);
+    }
+    
+    return days.map(dayValues => {
+        if (dayValues.length === 0) return 0;
+        return dayValues.reduce((a, b) => a + b, 0) / dayValues.length;
+    });
+}
+
+function renderDecompositionChart(canvasId, data, title) {
+    const ctx = document.getElementById(canvasId).getContext('2d');
+    
+    // Simulation d'une décomposition (dans une vraie application, utiliser une librairie comme statsmodels)
+    const trend = calculateTrend(data.values);
+    const seasonal = calculateSeasonal(data.values, 7); // Saisonnalité hebdomadaire
+    const residual = data.values.map((val, i) => val - trend[i] - seasonal[i]);
+    
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: data.dates,
+            datasets: [
+                {
+                    label: 'Tendance',
+                    data: trend,
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.1
+                },
+                {
+                    label: 'Saisonnalité',
+                    data: seasonal,
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.1
+                },
+                {
+                    label: 'Résidu',
+                    data: residual,
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                title: {
+                    display: true,
+                    text: title
+                },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false
+                }
+            },
+            scales: {
+                x: {
+                    type: 'time',
+                    time: {
+                        unit: 'month'
+                    }
+                },
+                y: {
+                    title: {
+                        display: true,
+                        text: 'Nombre de résiliations'
+                    }
+                }
+            }
+        }
+    });
+}
+
+function calculateTrend(values, windowSize = 7) {
+    // Moyenne mobile simple pour la tendance
+    const trend = [];
+    const halfWindow = Math.floor(windowSize / 2);
+    
+    for (let i = 0; i < values.length; i++) {
+        let sum = 0;
+        let count = 0;
+        
+        for (let j = i - halfWindow; j <= i + halfWindow; j++) {
+            if (j >= 0 && j < values.length) {
+                sum += values[j];
+                count++;
+            }
+        }
+        
+        trend.push(sum / count);
+    }
+    
+    return trend;
+}
+
+function calculateSeasonal(values, seasonLength = 7) {
+    // Calcul saisonnier simplifié
+    const seasonal = [];
+    const seasonIndices = Array(seasonLength).fill(0).map(() => []);
+    
+    for (let i = 0; i < values.length; i++) {
+        seasonIndices[i % seasonLength].push(values[i]);
+    }
+    
+    const seasonAverages = seasonIndices.map(arr => {
+        if (arr.length === 0) return 0;
+        return arr.reduce((a, b) => a + b, 0) / arr.length;
+    });
+    
+    const overallMean = seasonAverages.reduce((a, b) => a + b, 0) / seasonLength;
+    
+    for (let i = 0; i < values.length; i++) {
+        seasonal.push(seasonAverages[i % seasonLength] - overallMean);
+    }
+    
+    return seasonal;
+}
+
+// Modifiez la fonction runForecast
+function runForecast() {
+    const modelType = document.getElementById('modelType').value;
+    const period = parseInt(document.getElementById('forecastPeriod').value);
+    const confidence = parseInt(document.getElementById('confidenceLevel').value);
+    const includeXDSL = document.getElementById('xdslCheck').checked;
+    const includeFTTx = document.getElementById('fttxCheck').checked;
+
+    // Afficher un indicateur de chargement
+    document.getElementById('forecastResults').innerHTML = `
+        <div class="text-center">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p>Calcul en cours avec le modèle ${modelType.toUpperCase()}...</p>
+        </div>
+    `;
+
+    // Simuler un délai pour permettre l'affichage du spinner
+    setTimeout(() => {
+        displayForecastResults(modelType, period, confidence, includeXDSL, includeFTTx);
+    }, 500); // Délai court pour l'effet visuel
+}
+
+// Modifiez la fonction displayForecastResults pour inclure SARIMA
+function displayForecastResults(modelType, period, confidence, includeXDSL, includeFTTx) {
+    const xdslData = processSheetData(xdslSheetData);
+    const fttxData = processSheetData(fttxSheetData);
+
+    // Calcul des métriques
+    let xdslMetrics = {};
+    if (includeXDSL) {
+        const xdslForecast = simulateForecast(modelType, xdslData, period);
+        xdslMetrics = calculateMetrics(xdslData.values, xdslForecast);
+    }
+
+    let fttxMetrics = {};
+    if (includeFTTx) {
+        const fttxForecast = simulateForecast(modelType, fttxData, period);
+        fttxMetrics = calculateMetrics(fttxData.values, fttxForecast);
+    }
+
+    // Génération du HTML
+    const resultsHTML = `
+        <h5>Résultats de la Prévision (${modelType.toUpperCase()})</h5>
+        <p><strong>Période:</strong> ${period} jours | <strong>Confiance:</strong> ${confidence}%</p>
+        
+        <div class="row mt-3">
+            ${includeXDSL ? `
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        xDSL - Métriques
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-sm">
+                            <tr><td>RMSE</td><td>${xdslMetrics.rmse.toFixed(2)}</td></tr>
+                            <tr><td>MAE</td><td>${xdslMetrics.mae.toFixed(2)}</td></tr>
+                        </table>
+                    </div>
+                </div>
+            </div>` : ''}
+            
+            ${includeFTTx ? `
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-success text-white">
+                        FTTx - Métriques
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-sm">
+                            <tr><td>RMSE</td><td>${fttxMetrics.rmse.toFixed(2)}</td></tr>
+                            <tr><td>MAE</td><td>${fttxMetrics.mae.toFixed(2)}</td></tr>
+                        </table>
+                    </div>
+                </div>
+            </div>` : ''}
+        </div>
+
+        <div class="row mt-3">
+            ${includeXDSL ? `
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        xDSL - Prévisions
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-sm">
+                            <tr><td>Moyenne</td><td>${xdslMetrics.avg.toFixed(2)}</td></tr>
+                            <tr><td>Maximum</td><td>${xdslMetrics.max.toFixed(2)}</td></tr>
+                            <tr><td>Minimum</td><td>${xdslMetrics.min.toFixed(2)}</td></tr>
+                        </table>
+                    </div>
+                </div>
+            </div>` : ''}
+            
+            ${includeFTTx ? `
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-success text-white">
+                        FTTx - Prévisions
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-sm">
+                            <tr><td>Moyenne</td><td>${fttxMetrics.avg.toFixed(2)}</td></tr>
+                            <tr><td>Maximum</td><td>${fttxMetrics.max.toFixed(2)}</td></tr>
+                            <tr><td>Minimum</td><td>${fttxMetrics.min.toFixed(2)}</td></tr>
+                        </table>
+                    </div>
+                </div>
+            </div>` : ''}
+        </div>
+        
+        <div class="alert alert-info mt-3">
+            <strong>Note:</strong> Prévision basée sur ${modelType.toUpperCase()} 
+            (${getModelDescription(modelType)}).
+        </div>
+    `;
+
+    document.getElementById('forecastResults').innerHTML = resultsHTML;
+    renderForecastChart(modelType, period, confidence, includeXDSL, includeFTTx);
+}
+function getModelDescription(modelType) {
+    const descriptions = {
+        'arima': 'Modèle auto-régressif intégré à moyenne mobile',
+        'sarima': 'Modèle ARIMA avec saisonnalité hebdomadaire',
+        'prophet': 'Modèle additif avec composantes saisonnières',
+        'lstm': 'Réseau de neurones récurrents pour séries temporelles',
+        'ets': 'Modèle Error-Trend-Seasonality'
+    };
+    return descriptions[modelType] || 'Modèle de prévision temporelle';
+}
+function calculateMetrics(actual, forecast) {
+    const lastActual = actual.slice(-forecast.length);
+    
+    if (lastActual.length !== forecast.length || lastActual.length === 0) {
+        return {
+            rmse: 0,
+            mae: 0,
+            avg: 0,
+            max: 0,
+            min: 0
+        };
+    }
+
+    // Nouveau calcul avec pondération
+    const errors = lastActual.map((val, i) => val - forecast[i]);
+    const absErrors = errors.map(Math.abs);
+    
+    // Pondération des erreurs récentes
+    const weights = Array.from({length: lastActual.length}, (_, i) => 
+        Math.pow(0.9, lastActual.length - i - 1));
+    const totalWeight = weights.reduce((a, b) => a + b, 0);
+    
+    const weightedMAE = absErrors.reduce((sum, err, i) => 
+        sum + err * weights[i], 0) / totalWeight;
+    
+    
+    return {
+        rmse: Math.sqrt(errors.reduce((sum, err) => sum + err * err, 0) / errors.length),
+        mae: weightedMAE,
+        avg: forecast.reduce((a, b) => a + b, 0) / forecast.length,
+        max: Math.max(...forecast),
+        min: Math.min(...forecast)
+    };
+}
+function simulateForecast(modelType, data, period) {
+    switch(modelType) {
+        case 'sarima': return simulateSARIMA(data, period);
+        case 'lstm': return simulateLSTM(data, period);
+        case 'prophet': return simulateProphet(data, period);
+        case 'ets': return simulateETS(data, period);
+        default: return simulateARIMA(data, period);
+    }
+}
+function simulateARIMA(data, period) {
+    // Implémentation simplifiée d'ARIMA
+    const values = data.values;
+    const n = values.length;
+    const forecast = [];
+    
+    // Moyenne mobile simple
+    const windowSize = 7;
+    const lastWindow = values.slice(-windowSize);
+    const avg = lastWindow.reduce((a, b) => a + b, 0) / windowSize;
+    
+    // Ajout d'une légère tendance
+    const trend = (values[n-1] - values[0]) / n;
+    
+    for (let i = 0; i < period; i++) {
+        forecast.push(Math.max(0, Math.round(avg + trend * i)));
+    }
+    
+    return forecast;
+}
+
+function simulateETS(data, period) {
+    // Implémentation simplifiée d'ETS
+    const values = data.values;
+    const n = values.length;
+    const forecast = [];
+    
+    // Composantes ETS
+    const alpha = 0.2; // Niveau
+    const beta = 0.1;  // Tendance
+    const gamma = 0.1; // Saisonnalité
+    
+    let level = values[n-1];
+    let trend = (values[n-1] - values[0]) / n;
+    const seasonal = calculateSeasonal(values, 7);
+    
+    for (let i = 0; i < period; i++) {
+        const seasonalIdx = (n + i) % 7;
+        const prediction = level + trend + seasonal[seasonalIdx];
+        forecast.push(Math.max(0, Math.round(prediction)));
+        
+        // Mise à jour des composantes (simplifiée)
+        level = alpha * (prediction - seasonal[seasonalIdx]) + (1 - alpha) * (level + trend);
+        trend = beta * (level - values[n-1]) + (1 - beta) * trend;
+    }
+    
+    return forecast;
+}
+function simulateSARIMA(data, period = 30, seasonality = 7) {
+    const values = data.values;
+    const n = values.length;
+    
+    // Calcul de la tendance linéaire (simplifiée)
+    const trend = (values[n - 1] - values[0]) / n;
+    
+    // Calcul de la saisonnalité (moyenne par jour de la semaine)
+    const seasonal = Array(seasonality).fill(0);
+    for (let i = 0; i < n; i++) {
+        seasonal[i % seasonality] += values[i];
+    }
+    const seasonalPattern = seasonal.map(v => v / Math.floor(n / seasonality));
+    
+    // Génération des prévisions
+    const forecast = [];
+    for (let i = 0; i < period; i++) {
+        const seasonalIndex = (n + i) % seasonality;
+        forecast.push(
+            values[n - 1] + trend * (i + 1) + seasonalPattern[seasonalIndex]
+        );
+    }
+    
+    return forecast.map(v => Math.max(0, Math.round(v))); // Éviter les valeurs négatives
+}
+function simulateLSTM(data, period = 30) {
+    const values = data.values;
+    const n = values.length;
+    
+    // Simulation d'un apprentissage de pattern (simplifié)
+    const lastPattern = values.slice(-7); // Dernière semaine comme référence
+    const forecast = [];
+    
+    for (let i = 0; i < period; i++) {
+        const predicted = lastPattern.reduce((a, b) => a + b, 0) / 7 
+                        + (values[n - 1] - values[n - 8]) / 7; // Ajout d'une tendance
+        forecast.push(Math.round(predicted));
+        lastPattern.shift();
+        lastPattern.push(predicted);
+    }
+    
+    return forecast;
+}
+function simulateProphet(data, period = 30) {
+    const values = data.values;
+    const n = values.length;
+    
+    // Simulation des composantes de Prophet
+    const trend = values[n - 1] * 0.98; // Légère décroissance (simulée)
+    const weeklySeasonality = [0.9, 1.1, 1.0, 0.8, 1.2, 1.3, 0.7]; // Coefficients hebdomadaires
+    
+    const forecast = [];
+    for (let i = 0; i < period; i++) {
+        const dayOfWeek = (new Date(data.dates[n - 1]).getDay() + i) % 7;
+        forecast.push(Math.round(trend * weeklySeasonality[dayOfWeek]));
+    }
+    
+    return forecast;
+}
+function renderForecastChart(modelType, period, confidence, includeXDSL, includeFTTx) {
+    const ctx = document.getElementById('forecastChart').getContext('2d');
+    
+      // Correction: Utilisez "forecastChart" au lieu de "corecastChart"
+    if (window.forecastChart && typeof window.forecastChart.destroy === 'function') {
+        window.forecastChart.destroy(); // Détruit seulement si la fonction existe
+    }
+
+    const xdslData = processSheetData(xdslSheetData);
+    const fttxData = processSheetData(fttxSheetData);
+    
+    // Générer les prévisions
+    let xdslForecast = includeXDSL ? simulateForecast(modelType, xdslData, period) : [];
+    let fttxForecast = includeFTTx ? simulateForecast(modelType, fttxData, period) : [];
+
+    // Générer les dates futures
+    const lastDate = new Date(xdslData.dates[xdslData.dates.length - 1]);
+    const forecastDates = Array.from({ length: period }, (_, i) => {
+        const date = new Date(lastDate);
+        date.setDate(date.getDate() + i + 1);
+        return date;
+    });
+
+    // Créer le graphique
+    window.forecastChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: [...xdslData.dates.map(d => new Date(d)), ...forecastDates],
+            datasets: [
+                ...(includeXDSL ? [{
+                    label: 'xDSL Réel',
+                    data: [...xdslData.values, ...Array(period).fill(null)],
+                    borderColor: 'rgba(52, 152, 219, 1)',
+                    borderDash: [5, 5],
+                    backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                    tension: 0.1
+                }] : []),
+                ...(includeXDSL ? [{
+                    label: 'xDSL Prévision',
+                    data: [...Array(xdslData.values.length).fill(null), ...xdslForecast],
+                    borderColor: 'rgba(52, 152, 219, 1)',
+                    backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.1
+                }] : []),
+                ...(includeFTTx ? [{
+                    label: 'FTTx Réel',
+                    data: [...fttxData.values, ...Array(period).fill(null)],
+                    borderColor: 'rgba(46, 204, 113, 1)',
+                    borderDash: [5, 5],
+                    backgroundColor: 'rgba(46, 204, 113, 0.1)',
+                    tension: 0.1
+                }] : []),
+                ...(includeFTTx ? [{
+                    label: 'FTTx Prévision',
+                    data: [...Array(fttxData.values.length).fill(null), ...fttxForecast],
+                    borderColor: 'rgba(46, 204, 113, 1)',
+                    backgroundColor: 'rgba(46, 204, 113, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.1
+                }] : [])
+            ]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                title: {
+                    display: true,
+                    text: `Prévision (${modelType.toUpperCase()})`
+                },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false
+                }
+            },
+            scales: {
+                x: {
+                    type: 'time',
+                    time: {
+                        unit: 'day',
+                        tooltipFormat: 'DD MMM YYYY'
+                    },
+                    title: {
+                        display: true,
+                        text: 'Date'
+                    }
+                },
+                y: {
+                    title: {
+                        display: true,
+                        text: 'Nombre de Résiliations'
+                    },
+                    min: 0
+                }
+            }
+        }
+    });
+}
+        // Mock data - in a real implementation, this would come from your actual dataset
+// Mock data - in a real implementation, this would come from your actual dataset
+const xdslSheetData = [
+    ["Date de résiliation", "nombre de resiliations"],
+    ["2024-09-03", 2],
+    ["2024-09-04", 2],
+    ["2024-09-05", 5],
+    ["2024-09-08", 8],
+    ["2024-09-09", 7],
+    ["2024-09-10", 17],
+    ["2024-09-11", 7],
+    ["2024-09-12", 8],
+    ["2024-09-14", 11],
+    ["2024-09-15", 25],
+    ["2024-09-17", 18],
+    ["2024-09-18", 36],
+    ["2024-09-19", 20],
+    ["2024-09-21", 13],
+    ["2024-09-22", 17],
+    ["2024-09-23", 19],
+    ["2024-09-24", 43],
+    ["2024-09-25", 48],
+    ["2024-09-26", 54],
+    ["2024-09-28", 28],
+    ["2024-09-29", 72],
+    ["2024-09-30", 46],
+    ["2024-10-01", 86],
+    ["2024-10-02", 80],
+    ["2024-10-03", 91],
+    ["2024-10-05", 33],
+    ["2024-10-06", 100],
+    ["2024-10-07", 112],
+    ["2024-10-08", 85],
+    ["2024-10-09", 104],
+    ["2024-10-10", 109],
+    ["2024-10-11", 1],
+    ["2024-10-12", 51],
+    ["2024-10-13", 104],
+    ["2024-10-14", 113],
+    ["2024-10-15", 108],
+    ["2024-10-16", 121],
+    ["2024-10-17", 176],
+    ["2024-10-19", 50],
+    ["2024-10-20", 150],
+    ["2024-10-21", 125],
+    ["2024-10-22", 104],
+    ["2024-10-23", 135],
+    ["2024-10-24", 145],
+    ["2024-10-25", 1],
+    ["2024-10-26", 49],
+    ["2024-10-27", 165],
+    ["2024-10-28", 128],
+    ["2024-10-29", 113],
+    ["2024-10-30", 118],
+    ["2024-10-31", 124],
+    ["2024-11-01", 1],
+    ["2024-11-02", 41],
+    ["2024-11-03", 104],
+    ["2024-11-04", 106],
+    ["2024-11-05", 115],
+    ["2024-11-06", 137],
+    ["2024-11-07", 111],
+    ["2024-11-09", 64],
+    ["2024-11-10", 113],
+    ["2024-11-11", 102],
+    ["2024-11-12", 110],
+    ["2024-11-13", 103],
+    ["2024-11-14", 96],
+    ["2024-11-16", 50],
+    ["2024-11-17", 136],
+    ["2024-11-18", 151],
+    ["2024-11-19", 153],
+    ["2024-11-20", 151],
+    ["2024-11-21", 124],
+    ["2024-11-23", 70],
+    ["2024-11-24", 163],
+    ["2024-11-25", 131],
+    ["2024-11-26", 134],
+    ["2024-11-27", 142],
+    ["2024-11-28", 148],
+    ["2024-11-30", 64],
+    ["2024-12-01", 148],
+    ["2024-12-02", 125],
+    ["2024-12-03", 117],
+    ["2024-12-04", 120],
+    ["2024-12-05", 130],
+    ["2024-12-07", 49],
+    ["2024-12-08", 140],
+    ["2024-12-09", 97],
+    ["2024-12-10", 169],
+    ["2024-12-11", 133],
+    ["2024-12-12", 107],
+    ["2024-12-14", 40],
+    ["2024-12-15", 97],
+    ["2024-12-16", 99],
+    ["2024-12-17", 129],
+    ["2024-12-18", 135],
+    ["2024-12-19", 111],
+    ["2024-12-21", 55],
+    ["2024-12-22", 168],
+    ["2024-12-23", 333],
+    ["2024-12-24", 154],
+    ["2024-12-25", 101],
+    ["2024-12-26", 108],
+    ["2024-12-27", 35],
+    ["2024-12-28", 51],
+    ["2024-12-29", 117],
+    ["2024-12-30", 132],
+    ["2024-12-31", 76],
+    ["2025-01-01", 3],
+    ["2025-01-02", 70],
+    ["2025-01-04", 82],
+    ["2025-01-05", 201],
+    ["2025-01-06", 116],
+    ["2025-01-07", 111],
+    ["2025-01-08", 157],
+    ["2025-01-09", 167],
+    ["2025-01-11", 91],
+    ["2025-01-12", 7],
+    ["2025-01-13", 169],
+    ["2025-01-14", 137],
+    ["2025-01-15", 154],
+    ["2025-01-16", 141],
+    ["2025-01-18", 73],
+    ["2025-01-19", 151],
+    ["2025-01-20", 153],
+    ["2025-01-21", 144],
+    ["2025-01-22", 184],
+    ["2025-01-23", 96],
+    ["2025-01-24", 2],
+    ["2025-01-25", 48],
+    ["2025-01-26", 125],
+    ["2025-01-27", 123],
+    ["2025-01-28", 134],
+    ["2025-01-29", 125],
+    ["2025-01-30", 104],
+    ["2025-02-01", 67],
+    ["2025-02-02", 121],
+    ["2025-02-03", 119],
+    ["2025-02-04", 117],
+    ["2025-02-05", 101],
+    ["2025-02-06", 79],
+    ["2025-02-08", 33],
+    ["2025-02-09", 140],
+    ["2025-02-10", 66],
+    ["2025-02-12", 18],
+    ["2025-02-13", 68],
+    ["2025-02-14", 25],
+    ["2025-02-15", 19],
+    ["2025-02-16", 120],
+    ["2025-02-17", 46],
+    ["2025-02-18", 85],
+    ["2025-02-19", 95],
+    ["2025-02-20", 65],
+    ["2025-02-21", 70],
+    ["2025-02-22", 78],
+    ["2025-02-23", 50],
+    ["2025-02-24", 96],
+    ["2025-02-25", 80],
+    ["2025-02-26", 111],
+    ["2025-02-27", 125],
+    ["2025-02-28", 26],
+    ["2025-03-01", 44],
+    ["2025-03-02", 112],
+    ["2025-03-03", 135],
+    ["2025-03-04", 124],
+    ["2025-03-05", 129],
+    ["2025-03-06", 125],
+    ["2025-03-08", 77],
+    ["2025-03-09", 124],
+    ["2025-03-10", 151],
+    ["2025-03-11", 163],
+    ["2025-03-12", 163],
+    ["2025-03-13", 175],
+    ["2025-03-14", 1],
+    ["2025-03-15", 78],
+    ["2025-03-16", 155],
+    ["2025-03-17", 171],
+    ["2025-03-18", 143],
+    ["2025-03-19", 198],
+    ["2025-03-20", 100],
+    ["2025-03-22", 78],
+    ["2025-03-23", 150],
+    ["2025-03-24", 127],
+    ["2025-03-25", 125],
+    ["2025-03-26", 208],
+    ["2025-03-27", 120],
+    ["2025-03-28", 1],
+    ["2025-03-29", 36],
+    ["2025-03-30", 79],
+    ["2025-04-03", 108],
+    ["2025-04-05", 65],
+    ["2025-04-06", 228],
+    ["2025-04-07", 143],
+    ["2025-04-08", 205],
+    ["2025-04-09", 171],
+    ["2025-04-10", 168],
+    ["2025-04-11", 1],
+    ["2025-04-12", 86],
+    ["2025-04-13", 173],
+    ["2025-04-14", 164],
+    ["2025-04-15", 146],
+    ["2025-04-16", 202],
+    ["2025-04-17", 148],
+    ["2025-04-19", 79],
+    ["2025-04-20", 193],
+    ["2025-04-21", 213],
+    ["2025-04-22", 152],
+    ["2025-04-23", 130],
+    ["2025-04-24", 153],
+    ["2025-04-25", 1],
+    ["2025-04-26", 72],
+    ["2025-04-27", 138],
+    ["2025-04-28", 194],
+    ["2025-04-29", 208],
+    ["2025-04-30", 121]
+];
+
+const fttxSheetData = [
+    ["Date de résiliation", "nombre de resiliations"],
+    ["2024-09-03", 7],
+    ["2024-09-04", 10],
+    ["2024-09-05", 5],
+    ["2024-09-08", 9],
+    ["2024-09-09", 6],
+    ["2024-09-10", 9],
+    ["2024-09-11", 11],
+    ["2024-09-12", 9],
+    ["2024-09-14", 7],
+    ["2024-09-15", 17],
+    ["2024-09-16", 1],
+    ["2024-09-17", 11],
+    ["2024-09-18", 13],
+    ["2024-09-19", 19],
+    ["2024-09-21", 7],
+    ["2024-09-22", 12],
+    ["2024-09-23", 28],
+    ["2024-09-24", 44],
+    ["2024-09-25", 54],
+    ["2024-09-26", 43],
+    ["2024-09-28", 19],
+    ["2024-09-29", 28],
+    ["2024-09-30", 44],
+    ["2024-10-01", 32],
+    ["2024-10-02", 48],
+    ["2024-10-03", 63],
+    ["2024-10-05", 19],
+    ["2024-10-06", 60],
+    ["2024-10-07", 37],
+    ["2024-10-08", 42],
+    ["2024-10-09", 89],
+    ["2024-10-10", 63],
+    ["2024-10-12", 20],
+    ["2024-10-13", 74],
+    ["2024-10-14", 66],
+    ["2024-10-15", 47],
+    ["2024-10-16", 48],
+    ["2024-10-17", 30],
+    ["2024-10-19", 35],
+    ["2024-10-20", 66],
+    ["2024-10-21", 54],
+    ["2024-10-22", 50],
+    ["2024-10-23", 46],
+    ["2024-10-24", 61],
+    ["2024-10-26", 29],
+    ["2024-10-27", 58],
+    ["2024-10-28", 60],
+    ["2024-10-29", 35],
+    ["2024-10-30", 47],
+    ["2024-10-31", 42],
+    ["2024-11-02", 29],
+    ["2024-11-03", 35],
+    ["2024-11-04", 49],
+    ["2024-11-05", 32],
+    ["2024-11-06", 41],
+    ["2024-11-07", 65],
+    ["2024-11-09", 41],
+    ["2024-11-10", 52],
+    ["2024-11-11", 58],
+    ["2024-11-12", 50],
+    ["2024-11-13", 52],
+    ["2024-11-14", 45],
+    ["2024-11-16", 30],
+    ["2024-11-17", 47],
+    ["2024-11-18", 65],
+    ["2024-11-19", 56],
+    ["2024-11-20", 48],
+    ["2024-11-21", 46],
+    ["2024-11-23", 22],
+    ["2024-11-24", 52],
+    ["2024-11-25", 62],
+    ["2024-11-26", 64],
+    ["2024-11-27", 56],
+    ["2024-11-28", 42],
+    ["2024-11-30", 29],
+    ["2024-12-01", 46],
+    ["2024-12-02", 38],
+    ["2024-12-03", 46],
+    ["2024-12-04", 32],
+    ["2024-12-05", 64],
+    ["2024-12-07", 28],
+    ["2024-12-08", 61],
+    ["2024-12-09", 51],
+    ["2024-12-10", 68],
+    ["2024-12-11", 36],
+    ["2024-12-12", 31],
+    ["2024-12-14", 19],
+    ["2024-12-15", 47],
+    ["2024-12-16", 47],
+    ["2024-12-17", 45],
+    ["2024-12-18", 43],
+    ["2024-12-19", 32],
+    ["2024-12-20", 1],
+    ["2024-12-21", 26],
+    ["2024-12-22", 35],
+    ["2024-12-23", 49],
+    ["2024-12-24", 47],
+    ["2024-12-25", 49],
+    ["2024-12-26", 28],
+    ["2024-12-27", 8],
+    ["2024-12-28", 25],
+    ["2024-12-29", 47],
+    ["2024-12-30", 48],
+    ["2024-12-31", 29],
+    ["2025-01-01", 3],
+    ["2025-01-02", 44],
+    ["2025-01-04", 27],
+    ["2025-01-05", 51],
+    ["2025-01-06", 54],
+    ["2025-01-07", 75],
+    ["2025-01-08", 72],
+    ["2025-01-09", 49],
+    ["2025-01-11", 28],
+    ["2025-01-13", 54],
+    ["2025-01-14", 58],
+    ["2025-01-15", 73],
+    ["2025-01-16", 60],
+    ["2025-01-18", 35],
+    ["2025-01-19", 54],
+    ["2025-01-20", 62],
+    ["2025-01-21", 58],
+    ["2025-01-22", 55],
+    ["2025-01-23", 43],
+    ["2025-01-24", 2],
+    ["2025-01-25", 35],
+    ["2025-01-26", 50],
+    ["2025-01-27", 54],
+    ["2025-01-28", 56],
+    ["2025-01-29", 47],
+    ["2025-01-30", 53],
+    ["2025-02-01", 26],
+    ["2025-02-02", 33],
+    ["2025-02-03", 54],
+    ["2025-02-04", 42],
+    ["2025-02-05", 37],
+    ["2025-02-06", 37],
+    ["2025-02-08", 15],
+    ["2025-02-09", 8],
+    ["2025-02-10", 2],
+    ["2025-02-11", 1],
+    ["2025-02-12", 12],
+    ["2025-02-13", 40],
+    ["2025-02-14", 27],
+    ["2025-02-15", 33],
+    ["2025-02-16", 7],
+    ["2025-02-17", 22],
+    ["2025-02-18", 13],
+    ["2025-02-19", 24],
+    ["2025-02-20", 43],
+    ["2025-02-21", 57],
+    ["2025-02-22", 18],
+    ["2025-02-23", 9],
+    ["2025-02-24", 36],
+    ["2025-02-25", 40],
+    ["2025-02-26", 15],
+    ["2025-02-27", 11],
+    ["2025-02-28", 1],
+    ["2025-03-01", 27],
+    ["2025-03-02", 37],
+    ["2025-03-03", 31],
+    ["2025-03-04", 39],
+    ["2025-03-05", 34],
+    ["2025-03-06", 33],
+    ["2025-03-07", 1],
+    ["2025-03-08", 23],
+    ["2025-03-09", 38],
+    ["2025-03-10", 31],
+    ["2025-03-11", 42],
+    ["2025-03-12", 45],
+    ["2025-03-13", 39],
+    ["2025-03-14", 1],
+    ["2025-03-15", 32],
+    ["2025-03-16", 62],
+    ["2025-03-17", 49],
+    ["2025-03-18", 41],
+    ["2025-03-19", 52],
+    ["2025-03-20", 24],
+    ["2025-03-22", 24],
+    ["2025-03-23", 45],
+    ["2025-03-24", 34],
+    ["2025-03-25", 33],
+    ["2025-03-26", 40],
+    ["2025-03-27", 35],
+    ["2025-03-28", 1],
+    ["2025-03-29", 13],
+    ["2025-03-30", 26],
+    ["2025-04-01", 1],
+    ["2025-04-02", 2],
+    ["2025-04-03", 32],
+    ["2025-04-05", 31],
+    ["2025-04-06", 61],
+    ["2025-04-07", 61],
+    ["2025-04-08", 65],
+    ["2025-04-09", 63],
+    ["2025-04-10", 55],
+    ["2025-04-11", 1],
+    ["2025-04-12", 30],
+    ["2025-04-13", 58],
+    ["2025-04-14", 51],
+    ["2025-04-15", 54],
+    ["2025-04-16", 55],
+    ["2025-04-17", 54],
+    ["2025-04-18", 1],
+    ["2025-04-19", 26],
+    ["2025-04-20", 49],
+    ["2025-04-21", 58],
+    ["2025-04-22", 59],
+    ["2025-04-23", 41],
+    ["2025-04-24", 39],
+    ["2025-04-26", 30],
+    ["2025-04-27", 60],
+    ["2025-04-28", 55],
+    ["2025-04-29", 54],
+    ["2025-04-30", 53]
+];
+    </script>
+    
+{% endblock %}

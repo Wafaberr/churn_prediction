@@ -25,18 +25,18 @@
             <i data-feather="sliders"></i>
             <span>Features</span>
           </button>
-          <!-- <button class="sliding-tab" data-tab="dimension-reduction" onclick="switchTab('dimension-reduction')">
-            <i data-feather="minimize-2"></i>
-            <span>Dimension Reduction</span>
-          </button> -->
-          <button class="sliding-tab" data-tab="models" onclick="switchTab('models')">
+
+          <button class="sliding-tab" data-tab="models" id="go-to-models-btn" onclick="runPreprocessingAndGoToModels()">
             <i data-feather="cpu"></i>
             <span>Models</span>
           </button>
-          <button class="sliding-tab" data-tab="evaluation" onclick="switchTab('evaluation')">
+          <button class="sliding-tab" data-tab="evaluation" id="go-to-training-btn"
+            onclick="saveModelsAndGoToTraining()">
             <i data-feather="check-circle"></i>
             <span>Evaluation</span>
           </button>
+
+
           <button class="sliding-tab" data-tab="data-augmentation" onclick="switchTab('data-augmentation')">
             <i data-feather="copy"></i>
             <span>Data Augmentation</span>
@@ -47,10 +47,7 @@
           </button>
         </div>
       </div>
-      <!-- Nouveau header fixe en haut à gauche -->
-      <div class="popup-header">
-        <button id="confirm-experiment-btn" class="btn btn-primary">Run expérience</button>
-      </div>
+
 
       <!-- Contenu des onglets -->
       <div class="tab-content">
@@ -83,97 +80,6 @@
             </table>
           </div>
         </div>
-        <!-- <div id="dimension-reduction-content" class="tab-pane p-4 bg-white rounded shadow">
-          <h3 class="text-xl font-semibold mb-4">Dimension Reduction</h3>
-          Modifiez la section Feature Selection comme ceci
-          <div class="mb-6">
-            <h4 class="font-medium text-gray-800 mb-2">Feature Selection</h4>
-            <p class="text-sm text-gray-600 mb-2">Apply to selected features:</p>
-
-            <div class="space-y-2">
-              <div class="flex items-center justify-between">
-                <span>Remove features containing missing data</span>
-                <label class="switch">
-                  <input type="checkbox" class="feature-selection-switch" data-target="missing">
-                  <span class="slider round"></span>
-                </label>
-              </div>
-
-              <div class="flex items-center justify-between">
-                <span>Remove features containing single value</span>
-                <label class="switch">
-                  <input type="checkbox" class="feature-selection-switch" data-target="single-value">
-                  <span class="slider round"></span>
-                </label>
-              </div>
-
-              <div class="flex items-center justify-between">
-                <span>Remove colinear features</span>
-                <label class="switch">
-                  <input type="checkbox" class="feature-selection-switch" data-target="colinear">
-                  <span class="slider round"></span>
-                </label>
-              </div>
-
-              <div class="flex items-center justify-between">
-                <span>Remove features with zero importance</span>
-                <label class="switch">
-                  <input type="checkbox" class="feature-selection-switch" data-target="zero-importance">
-                  <span class="slider round"></span>
-                </label>
-              </div>
-
-              <div class="flex items-center justify-between">
-                <span>Remove features with low importance</span>
-                <label class="switch">
-                  <input type="checkbox" class="feature-selection-switch" data-target="low-importance">
-                  <span class="slider round"></span>
-                </label>
-              </div>
-            </div>
-          </div>
-
-          // Modifiez la section PCA comme ceci 
-          <div class="mb-6">
-            <div class="flex items-center justify-between mb-2">
-              <h4 class="font-medium text-gray-800">PCA</h4>
-              <label class="switch">
-                <input type="checkbox" class="pca-enable" id="pca-enable" checked>
-                <span class="slider round"></span>
-              </label>
-            </div>
-
-            <div id="pca-options" class="pl-4">
-              <label class="block font-medium text-gray-700 mb-1">Select mode</label>
-              <select class="w-full p-2 border border-gray-300 rounded mb-2">
-                <option>Target variance</option>
-                <option>Number of components</option>
-              </select>
-
-              <div class="flex items-center justify-between mb-1">
-                <label for="target-variance" class="font-medium text-gray-700">Target variance</label>
-                <span id="variance-value" class="text-sm font-mono bg-gray-100 px-2 py-1 rounded">0.80</span>
-              </div>
-              <input type="range" min="0" max="1" step="0.01" value="0.8" id="target-variance" class="w-full mb-2">
-            </div>
-          </div>
-          //Dans la section dimension-reduction-content, modifiez le bloc Random State comme suit : 
-          <div class="mb-6">
-            <label for="random-state" class="block font-medium text-gray-700 mb-2">Random State</label>
-            <div class="flex items-center space-x-2">
-              <input type="number" id="random-state" value="5" class="w-full p-2 border border-gray-300 rounded">
-              <button id="reset-dimension-btn"
-                class="px-4 py-2 text-blue-600 border border-blue-500 rounded hover:bg-blue-100">
-                <i class="fas fa-undo"></i> Reset
-              </button>
-              <button id="save-dimension-btn" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
-                <i class="fas fa-save"></i> Save
-              </button>
-            </div>
-            <p class="text-sm text-gray-500 mt-1">Random State for reproducing same experiments.</p>
-          </div>
-        </div> -->
-
         <div id="models-content" class="tab-pane">
           <h2 class="section-title">Machine Learning Models</h2>
 
@@ -709,17 +615,18 @@
                 </div>
               </div>
 
+              <!-- Dans la section Test Split -->
               <div class="section-content">
                 <div class="parameter-group">
                   <div class="parameter-header">
                     <h4 class="parameter-title">Test set ratio</h4>
-                    <span class="parameter-value">0.1</span>
+                    <span class="parameter-value" id="testSetRatioDisplay">0.2</span>
                   </div>
                   <div class="slider-container">
-                    <input type="range" min="0" max="100" value="10" class="slider" id="testSetRatio">
+                    <input type="range" min="0" max="100" value="20" class="slider" id="testSetRatio">
                     <div class="slider-labels">
                       <span>0</span>
-                      <span>0.1</span>
+                      <span>0.5</span>
                       <span>1</span>
                     </div>
                   </div>
@@ -740,247 +647,262 @@
                 </div>
               </div>
 
-              <div class="section-content">
-                <div class="parameter-group">
-                  <h4 class="parameter-title">Method</h4>
-                  <div class="method-selector">
-                    <div class="method-option selected">
-                      <i class="method-icon shuffle-icon"></i>
-                      Shuffle and Split
-                    </div>
-                    <div class="method-option">
-                      <i class="method-icon kfold-icon"></i>
-                      K-Fold CV
-                    </div>
+              <!-- Dans la section Validation Split -->
+              <div class="parameter-group">
+                <h4 class="parameter-title">Method</h4>
+                <div class="method-selector">
+                  <div class="method-option selected" data-method="shuffle_split">
+                    <i class="method-icon shuffle-icon"></i>
+                    Shuffle and Split
                   </div>
-                </div>
-
-                <div class="parameter-group">
-                  <div class="parameter-header">
-                    <h4 class="parameter-title">Validation set ratio</h4>
-                    <span class="parameter-value">0.1</span>
+                  <div class="method-option" data-method="kfold">
+                    <i class="method-icon kfold-icon"></i>
+                    K-Fold CV
                   </div>
-                  <div class="slider-container">
-                    <input type="range" min="0" max="100" value="10" class="slider" id="validationSetRatio">
-                    <div class="slider-labels">
-                      <span>0</span>
-                      <span>0.1</span>
-                      <span>1</span>
-                    </div>
-                  </div>
-                  <p class="parameter-description">Percentage of training data used for validation during hyperparameter
-                    search</p>
-                </div>
-
-                <div class="options-group">
-                  <div class="checkbox-group">
-                    <label class="checkbox-option">
-                      <input type="checkbox">
-                      <span class="custom-checkbox"></span>
-                      <span class="option-label">Balanced</span>
-                    </label>
-                    <p class="option-description">Maintain original class distribution in all splits</p>
-                  </div>
-
-                  <div class="checkbox-group">
-                    <label class="checkbox-option">
-                      <input type="checkbox" checked>
-                      <span class="custom-checkbox"></span>
-                      <span class="option-label">Shuffle</span>
-                    </label>
-                    <p class="option-description">Randomize data order before splitting</p>
-                  </div>
-                </div>
-
-                <div class="actions-bar">
-                  <button class="btn btn-secondary">
-                    <i class="btn-icon reset-icon"></i>
-                    Reset to defaults
-                  </button>
-                  <button class="btn btn-primary">
-                    <i class="btn-icon save-icon"></i>
-                    Save configuration
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div id="data-augmentation-content" class="tab-pane">
-          <h3><i class="fas fa-expand-arrows-alt"></i> Data Augmentation Techniques</h3>
-
-          <div class="augmentation-container">
-            <!-- Section Oversampling -->
-            <div class="augmentation-section">
-              <h4><i class="fas fa-copy"></i> Oversampling Methods</h4>
-              <div class="method-grid">
-                <div class="method-card" data-method="random">
-                  <i class="fas fa-random"></i>
-                  <span>Random Over-sampling</span>
-                </div>
-
-                <div class="method-card" data-method="smote">
-                  <i class="fas fa-project-diagram"></i>
-                  <span>SMOTE</span>
-                </div>
-
-                <div class="method-card" data-method="adasyn">
-                  <i class="fas fa-adjust"></i>
-                  <span>ADASYN</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Section Borderline -->
-            <div class="augmentation-section">
-              <h4><i class="fas fa-border-style"></i> Borderline Methods</h4>
-              <div class="method-grid">
-                <div class="method-card" data-method="borderline-smote">
-                  <i class="fas fa-border-none"></i>
-                  <span>Borderline SMOTE</span>
-                </div>
-
-                <div class="method-card" data-method="swim-maha">
-                  <i class="fas fa-swimming-pool"></i>
-                  <span>SWIM Maha</span>
-                </div>
-
-                <div class="method-card" data-method="swim-rbf">
-                  <i class="fas fa-wave-square"></i>
-                  <span>SWIM RBF</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Section Special -->
-            <div class="augmentation-section">
-              <h4><i class="fas fa-star"></i> Special Methods</h4>
-              <div class="method-grid">
-                <div class="method-card" data-method="smotenc">
-                  <i class="fas fa-asterisk"></i>
-                  <span>SMOTENC</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="model-selection">
-            <button id="select-model-btn" class="btn btn-primary">
-              <i class="fas fa-check-circle"></i> Select Model
-            </button>
-          </div>
-        </div>
-        <div id="hyperparameters-content" class="tab-pane">
-          <div class="section-header">
-            <h2><i class="fas fa-sliders-h"></i> Hyperparameters Tuning</h2>
-            <p class="section-description">Optimize your model performance by adjusting these parameters</p>
-          </div>
-
-          <div class="hyperparameters-section card">
-            <!-- Strategy Method -->
-            <div class="parameter-group strategy-method">
-              <div class="parameter-header">
-                <i class="fas fa-tasks parameter-icon"></i>
-                <h3>Strategy Method</h3>
-                <div class="info-tooltip" data-tooltip="Select the optimization algorithm">
-                  <i class="fas fa-info-circle"></i>
                 </div>
               </div>
 
-              <div class="dropdown custom-select">
-                <button class="dropdown-toggle">
-                  <span class="selected-value"><i class="fas fa-th"></i> Grid Search</span>
-                  <span class="arrow"><i class="fas fa-chevron-down"></i></span>
+              <div class="parameter-group">
+                <label for="validationSetRatio">Validation set ratio <span
+                    id="validationSetRatioDisplay">0.1</span></label>
+                <input type="range" id="validationSetRatio" min="0" max="50" value="10">
+                <p class="parameter-description">Percentage of training data used for validation during hyperparameter
+                  search</p>
+              </div>
+
+              <div class="options-group">
+                <div class="checkbox-group">
+                  <label class="checkbox-option">
+                    <input type="checkbox" id="stratifyCheck">
+                    <span class="custom-checkbox"></span>
+                    <span class="option-label">Balanced</span>
+                  </label>
+                  <p class="option-description">Maintain original class distribution in all splits</p>
+                </div>
+
+                <div class="checkbox-group">
+                  <label class="checkbox-option">
+                    <input type="checkbox" id="shuffleCheck" checked>
+                    <span class="custom-checkbox"></span>
+                    <span class="option-label">Shuffle</span>
+                  </label>
+                  <p class="option-description">Randomize data order before splitting</p>
+                </div>
+              </div>
+
+              <div class="actions-bar">
+                <button class="btn btn-secondary">
+                  <i class="btn-icon reset-icon"></i>
+                  Reset to defaults
                 </button>
-                <ul class="dropdown-menu">
-                  <li data-value="grid-search">
-                    <i class="fas fa-th"></i> Grid Search
-                    <span class="method-description">Exhaustive search over specified values</span>
-                  </li>
-                  <li data-value="tree-structured">
-                    <i class="fas fa-project-diagram"></i> Tree-structured Parzen Estimator
-                    <span class="method-description">Bayesian optimization for hyperparameters</span>
-                  </li>
-                </ul>
+                <button class="btn btn-primary" onclick="saveValidationConfig()">
+                  <i class="btn-icon save-icon"></i>
+                  Save configuration
+                </button>
               </div>
-            </div>
-
-            <!-- Grid Search Parameters -->
-            <div class="parameter-group grid-search-params card-inset">
-              <div class="parameter-header">
-                <i class="fas fa-search parameter-icon"></i>
-                <h4>Grid Search Configuration</h4>
-              </div>
-              <p class="parameter-description">Strategy to use for hyperparameters optimization.</p>
-
-              <!-- Evaluation Metric -->
-              <div class="parameter-item evaluation-metric">
-                <div class="parameter-subheader">
-                  <h5><i class="fas fa-chart-line"></i> Evaluation Metric</h5>
-                  <div class="info-tooltip" data-tooltip="Metric used to evaluate model performance">
-                    <i class="fas fa-info-circle"></i>
-                  </div>
-                </div>
-                <div class="dropdown custom-select">
-                  <button class="dropdown-toggle">
-                    <span class="selected-value"><i class="fas fa-check-circle"></i> Accuracy</span>
-                    <span class="arrow"><i class="fas fa-chevron-down"></i></span>
-                  </button>
-                  <ul class="dropdown-menu">
-                    <li data-value="auc"><i class="fas fa-area-chart"></i> AUC</li>
-                    <li data-value="precision"><i class="fas fa-bullseye"></i> Precision</li>
-                    <li data-value="accuracy"><i class="fas fa-check-circle"></i> Accuracy</li>
-                    <li data-value="recall"><i class="fas fa-redo"></i> Recall</li>
-                    <li data-value="f1"><i class="fas fa-percentage"></i> F1 Score</li>
-                  </ul>
-                </div>
-              </div>
-
-              <!-- Time Limit -->
-              <div class="parameter-item time-limit">
-                <div class="parameter-subheader">
-                  <h5><i class="fas fa-clock"></i> Time Limit</h5>
-                  <div class="info-tooltip" data-tooltip="Maximum optimization time in seconds">
-                    <i class="fas fa-info-circle"></i>
-                  </div>
-                </div>
-                <div class="input-with-tag">
-                  <input type="number" value="3600" class="form-control">
-                  <span class="input-tag">seconds</span>
-                </div>
-                <p class="parameter-description">Maximum time to search hyperparameters. Set to -1 for no limit.</p>
-              </div>
-
-              <!-- Max Combinations -->
-              <div class="parameter-item max-combinations">
-                <div class="parameter-subheader">
-                  <h5><i class="fas fa-layer-group"></i> Maximum Combinations</h5>
-                  <div class="info-tooltip" data-tooltip="Limit for hyperparameter combinations">
-                    <i class="fas fa-info-circle"></i>
-                  </div>
-                </div>
-                <div class="input-with-tag">
-                  <input type="number" value="-1" class="form-control">
-                </div>
-                <p class="parameter-description">Maximum combinations to consider. Set to -1 to unconstrain.</p>
-              </div>
-            </div>
-
-            <div class="parameter-actions">
-              <button class="btn btn-secondary btn-reset">
-                <i class="fas fa-undo"></i> Reset to Defaults
-              </button>
-              <button class="btn btn-primary btn-apply">
-                <i class="fas fa-check"></i> Apply Parameters
-              </button>
             </div>
           </div>
         </div>
       </div>
-    </div>
 
+      <div id="data-augmentation-content" class="tab-pane">
+        <div class="augmentation-header">
+          <h3><i class="fas fa-expand-arrows-alt"></i> Data Augmentation Techniques</h3>
+          <p class="section-description">Select and configure data augmentation methods to handle class imbalance</p>
+        </div>
+
+        <div class="augmentation-container">
+          <!-- Oversampling Methods -->
+          <div class="augmentation-section">
+            <div class="section-header">
+              <h4><i class="fas fa-copy"></i> Oversampling Methods</h4>
+              <div class="section-tooltip">
+                <i class="info-icon fas fa-info-circle"></i>
+                <span class="tooltip-text">Generate synthetic samples for minority classes</span>
+              </div>
+            </div>
+
+            <div class="method-grid">
+              <div class="method-card" data-method="random" data-category="oversampling">
+                <div class="method-icon">
+                  <i class="fas fa-random"></i>
+                </div>
+                <div class="method-content">
+                  <h5>Random Oversampling</h5>
+                  <p>Duplicate random samples from minority class</p>
+                  <div class="method-params" style="display:none;">
+                    <div class="param-group">
+                      <label>Sampling strategy</label>
+                      <select class="param-select" data-param="sampling_strategy">
+                        <option value="auto">Auto</option>
+                        <option value="minority">Minority only</option>
+                        <option value="all">All classes</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+                <button class="method-select-btn">Select</button>
+              </div>
+
+              <div class="method-card" data-method="smote" data-category="oversampling">
+                <div class="method-icon">
+                  <i class="fas fa-project-diagram"></i>
+                </div>
+                <div class="method-content">
+                  <h5>SMOTE</h5>
+                  <p>Synthetic Minority Over-sampling Technique</p>
+                  <div class="method-params" style="display:none;">
+                    <div class="param-group">
+                      <label>k-Neighbors</label>
+                      <input type="number" class="param-input" data-param="k_neighbors" value="5" min="1">
+                    </div>
+                    <div class="param-group">
+                      <label>Sampling strategy</label>
+                      <select class="param-select" data-param="sampling_strategy">
+                        <option value="auto">Auto</option>
+                        <option value="minority">Minority only</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+                <button class="method-select-btn">Select</button>
+              </div>
+
+              <div class="method-card" data-method="adasyn" data-category="oversampling">
+                <div class="method-icon">
+                  <i class="fas fa-adjust"></i>
+                </div>
+                <div class="method-content">
+                  <h5>ADASYN</h5>
+                  <p>Adaptive Synthetic Sampling</p>
+                  <div class="method-params" style="display:none;">
+                    <div class="param-group">
+                      <label>n-Neighbors</label>
+                      <input type="number" class="param-input" data-param="n_neighbors" value="5" min="1">
+                    </div>
+                    <div class="param-group">
+                      <label>Sampling strategy</label>
+                      <select class="param-select" data-param="sampling_strategy">
+                        <option value="auto">Auto</option>
+                        <option value="minority">Minority only</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+                <button class="method-select-btn">Select</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Borderline Methods -->
+          <div class="augmentation-section">
+            <div class="section-header">
+              <h4><i class="fas fa-border-style"></i> Borderline Methods</h4>
+              <div class="section-tooltip">
+                <i class="info-icon fas fa-info-circle"></i>
+                <span class="tooltip-text">Focus on borderline samples for better decision boundaries</span>
+              </div>
+            </div>
+
+            <div class="method-grid">
+              <div class="method-card" data-method="borderline-smote" data-category="borderline">
+                <div class="method-icon">
+                  <i class="fas fa-border-none"></i>
+                </div>
+                <div class="method-content">
+                  <h5>Borderline SMOTE</h5>
+                  <p>SMOTE focusing on borderline samples</p>
+                  <div class="method-params" style="display:none;">
+                    <div class="param-group">
+                      <label>k-Neighbors</label>
+                      <input type="number" class="param-input" data-param="k_neighbors" value="5" min="1">
+                    </div>
+                    <div class="param-group">
+                      <label>Kind</label>
+                      <select class="param-select" data-param="kind">
+                        <option value="borderline-1">Borderline-1</option>
+                        <option value="borderline-2">Borderline-2</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+                <button class="method-select-btn">Select</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="actions-bar">
+          <button id="save-augmentation-btn" class="btn btn-primary">
+            <i class="fas fa-save"></i> Save Configuration
+          </button>
+          <button id="reset-augmentation-btn" class="btn btn-secondary">
+            <i class="fas fa-undo"></i> Reset
+          </button>
+        </div>
+      </div>
+      <div class="tab-pane" id="hyperparameters-content">
+        <div class="run-experiment-container mb-2 mr-2">
+          <button id="run-experiment-btn" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition flex items-center no-underline">
+            <i class="fas fa-play-circle mr-2"></i>Exécuter l'éxpérience
+          </button>
+        </div>
+        <div class="section-card">
+          <div class="section-header">
+            <h3><i class="fas fa-sliders-h"></i>Réglage Hyperparameters </h3><hr>
+            <div class="section-description">
+            <p >Configurez les hyperparamètres pour optimiser les performances de votre
+              modèle</p></div>
+          </div>
+
+          <!-- 🔸 Strategy -->
+          <div class="form-group">
+
+            <label><i class="fas fa-stream"></i> Strategy Method</label>
+            <select id="strategy-method" class="form-control">
+              <option value="grid_search">Grid Search</option>
+              <option value="tpe">Tree-structured Parzen Estimator (TPE)</option>
+            </select>
+          </div>
+
+          <!-- 🔸 Evaluation Metric -->
+          <div class="form-group">
+            <label><i class="fas fa-chart-line"></i> Evaluation Metric</label>
+            <select id="eval-metric" class="form-control">
+              <option value="accuracy">Accuracy</option>
+              <option value="f1">F1 Score</option>
+              <option value="precision">Precision</option>
+              <option value="recall">Recall</option>
+            </select>
+          </div>
+
+          <!-- 🔸 Time Limit -->
+          <div class="form-group">
+            <label><i class="fas fa-clock"></i> Time Limit (sec)</label>
+            <input type="number" class="form-control" id="time-limit" min="-1" value="3600">
+          </div>
+
+          <!-- 🔸 Max combinations -->
+          <div class="form-group">
+            <label><i class="fas fa-th-large"></i> Max Combinations</label>
+            <input type="number" class="form-control" id="max-combinations" min="-1" value="-1">
+          </div>
+
+          <div class="text-end mt-3">
+            <button class="btn btn-primary" onclick="saveHyperparameterConfig()">
+              <i class="fas fa-save"></i> Save Configuration
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+
+    </div>
   </div>
+</div>
+
+</div>
 </div>
 
 

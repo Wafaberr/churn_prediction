@@ -20,6 +20,8 @@ const elements = {
     positiveClassContainer: document.getElementById('positiveClassContainer'),
     transformerSelect: document.getElementById('transformerSelect'),
     usecaseName: document.getElementById('usecaseName'),
+    usecaseTarget: document.getElementById('usecaseTarget'),
+    usecaseType: document.getElementById('usecaseType'),
     usecaseTag: document.getElementById('usecaseTag'),
     usecaseDescription: document.getElementById('usecaseDescription'),
     step2NextBtn: document.getElementById('step2NextBtn'),
@@ -388,7 +390,8 @@ async function submitUseCase() {
         usecase_tag: elements.usecaseTag.value.trim(),
         usecase_description: elements.usecaseDescription.value.trim(),
         dataset: filename,
-        task_type: selectedTask
+        task_type: selectedTask,
+        target_column: elements.targetColumnSelect.value.trim(),
     };
 
     try {

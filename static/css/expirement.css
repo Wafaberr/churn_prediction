@@ -1092,14 +1092,160 @@ input:checked + .slider:before {
 .feature-table tbody tr:hover {
   background-color: #f8fafc;
 }
-.popup-header {
+.parameter-actions {
   display: flex;
-  justify-content: flex-start;
   gap: 10px;
-  padding: 1rem;
+  margin-top: 20px;
+  justify-content: flex-end;
+}
+
+.highlight-error {
+  border: 2px solid #e74c3c !important;
+  animation: shake 0.3s;
+}
+
+@keyframes shake {
+  0% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  50% { transform: translateX(4px); }
+  75% { transform: translateX(-4px); }
+  100% { transform: translateX(0); }
+}
+
+/* Data Augmentation Section */
+.augmentation-header {
+  margin-bottom: 2rem;
+}
+
+.augmentation-section {
+  margin-bottom: 2.5rem;
+  padding: 1.5rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.method-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.method-card {
   background: white;
-  border-bottom: 1px solid #e5e7eb;
-  position: sticky;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
+  border: 1px solid #e9ecef;
+}
+
+.method-card.selected {
+  border: 2px solid #4e73df;
+  box-shadow: 0 4px 8px rgba(78, 115, 223, 0.2);
+}
+
+.method-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.method-icon {
+  font-size: 1.75rem;
+  color: #4e73df;
+  margin-bottom: 1rem;
+}
+
+.method-content h5 {
+  font-size: 1.1rem;
+  margin-bottom: 0.5rem;
+  color: #2d3748;
+}
+
+.method-content p {
+  color: #718096;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+}
+
+.method-params {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e9ecef;
+}
+
+.param-group {
+  margin-bottom: 1rem;
+}
+
+.param-group label {
+  display: block;
+  margin-bottom: 0.25rem;
+  font-size: 0.85rem;
+  color: #4a5568;
+}
+
+.param-input, .param-select {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+}
+
+.method-select-btn {
+  background: #4e73df;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-top: 1rem;
+}
+
+.method-select-btn:hover {
+  background: #3b5ab8;
+}
+
+.actions-bar {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+.section-card {
+  border: 1px solid #ddd;
+  padding: 20px;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+.section-header {
+  margin-bottom: 15px;
+}
+.section-header h3 {
+  font-weight: 600;
+  margin-bottom: 0;
+}
+.subtitle {
+  font-size: 0.9rem;
+  color: #777;
+}
+.form-group {
+  margin-bottom: 1rem;
+}
+
+#run-experiment-btn {
+  display: inline-flex;
+  
+  gap: 1rem;
+  position: relative;
   top: 0;
-  z-index: 100;
+  right: 0;
+  left: 870px;
 }

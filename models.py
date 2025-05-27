@@ -25,7 +25,7 @@ class UseCase(db.Model):
     task_type = db.Column(db.String(50))
     filename = db.Column(db.String(100), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
+    target_column = db.Column(db.String(100))
     def __repr__(self):
         return f'<UseCase {self.name}>'
 
@@ -52,18 +52,16 @@ class ExperimentConfig(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     use_case = db.relationship('UseCase', backref=db.backref('configs', lazy=True))
-
-class ExperimentRun(db.Model):
+class ValidationConfig(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    config_id = db.Column(db.Integer, db.ForeignKey('experiment_config.id'), nullable=False)
-    status = db.Column(db.String(20), default='pending')  # pending, running, completed, failed
-    results = db.Column(db.JSON)
-    started_at = db.Column(db.DateTime)
-    completed_at = db.Column(db.DateTime)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
-    config = db.relationship('ExperimentConfig', backref=db.backref('runs', lazy=True))
-
+    use_case_id = db.Column(db.Integer, db.ForeignKey('use_case.id'), nullable=False)
+    method = db.Column(db.String(20))
+    test_ratio = db.Column(db.Float)
+    ratio = db.Column(db.Float)
+    stratify = db.Column(db.Boolean)
+    shuffle = db.Column(db.Boolean)
+    
+    use_case = db.relationship('UseCase', backref=db.backref('validation_config', lazy=True))
 class Experiment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     use_case_id = db.Column(db.Integer, db.ForeignKey('use_case.id'), nullable=False)
@@ -73,6 +71,26 @@ class Experiment(db.Model):
     created_at = db.Column(db.DateTime, server_default=db.func.now())
     
     use_case = db.relationship('UseCase', backref='experiments')
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'test_set_ratio': self.test_set_ratio,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'status': self.status,
+            'results': self.results
+        }
+    
+    @classmethod
+    def create_from_dict(cls, data):
+        experiment = cls(
+            name=data.get('name'),
+            test_set_ratio=data.get('test_set_ratio', 0.1),
+            status='pending'
+        )
+        db.session.add(experiment)
+        db.session.commit()
+        return experiment
 
 
 class Feature(db.Model):
@@ -87,35 +105,42 @@ class Feature(db.Model):
 
     def __repr__(self):
         return f'<Feature {self.name}>'
+    use_case_id = db.Column(db.Integer, db.ForeignKey('use_case.id'), nullable=False)
 
-class MLModel(db.Model):
+class ModelConfiguration(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(128), index=True)
-    description = db.Column(db.Text)
+    use_case_id = db.Column(db.Integer, db.ForeignKey('use_case.id'), nullable=False)
+    name = db.Column(db.String(50), nullable=False)
     selected = db.Column(db.Boolean, default=False)
-    category = db.Column(db.String(50))  # Ensemble, Tree-based, etc.
-
+    parameters = db.Column(db.JSON)  # pour stocker dynamiquement les hyperparamètres
     def __repr__(self):
-        return f'<MLModel {self.name}>'
-
+        return f'<ModelConfiguration {self.name}>'
+    use_case = db.relationship('UseCase', backref=db.backref('model_configs', lazy=True))
+    
 class HyperparameterConfig(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    strategy = db.Column(db.String(50))  # Grid Search, Random Search
-    parameters = db.Column(db.JSON)
-    experiment_id = db.Column(db.Integer, db.ForeignKey('experiment.id'))
+    use_case_id = db.Column(db.Integer, db.ForeignKey("use_case.id"))
+    strategy = db.Column(db.String(50), nullable=False)
+    metric = db.Column(db.String(50), nullable=False)
+    time_limit = db.Column(db.Integer, default=3600)
+    max_combinations = db.Column(db.Integer, default=-1)
 
-    def __repr__(self):
-        return f'<HyperparameterConfig {self.strategy}>'
+    use_case = db.relationship("UseCase", backref="hyperparam_config")
 
-class DataAugmentation(db.Model):
+class DataAugmentationConfig(db.Model):
+    __tablename__ = 'data_augmentation_configs'
+    
     id = db.Column(db.Integer, primary_key=True)
-    method = db.Column(db.String(50))  # SMOTE, ADASYN, etc.
-    selected = db.Column(db.Boolean, default=False)
-    experiment_id = db.Column(db.Integer, db.ForeignKey('experiment.id'))
-
+    use_case_id = db.Column(db.Integer, db.ForeignKey('use_case.id'), nullable=False)
+    method = db.Column(db.String(50), nullable=False)
+    category = db.Column(db.String(50), nullable=False)
+    parameters = db.Column(db.JSON, default={})
+    
+    use_case = db.relationship('UseCase', backref='data_augmentation_configs')
+    
     def __repr__(self):
-        return f'<DataAugmentation {self.method}>'
-
+        return f'<DataAugmentationConfig {self.method} for UseCase {self.use_case_id}>'
+    
 class ModelEvaluation(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     experiment_id = db.Column(db.Integer, db.ForeignKey('experiment.id'))

@@ -7,3 +7,4 @@ if __name__ == '__main__':
         db.create_all() # <-- cette ligne doit être indenté
         print("✅ Base de données (re)créée avec succès.")
     app.run(debug=True, host='0.0.0.0')
+

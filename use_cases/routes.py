@@ -34,7 +34,9 @@ def create_usecase():
             description=data['usecase_description'],
             tag=data['usecase_tag'],
             task_type=data['task_type'],
-            filename=data['dataset']
+            filename=data['dataset'],
+            target_column=data['target_column'] # Assurez-vous que ce champ est bien fourni
+            # Si vous avez d'autres champs à ajouter, faites-le ici
         )
         
         db.session.add(new_case)
@@ -67,7 +69,9 @@ def get_use_cases():
         'tag': uc.tag,
         'task_type': uc.task_type,
         'created_at': uc.created_at.strftime('%Y-%m-%d %H:%M'),
-        'type': 'normal'  # Ajouter un champ pour distinguer les types
+        'type': 'normal' ,
+        'target_column': uc.target_column  # Ajouter la colonne cible                 
+        # Ajouter un champ pour distinguer les types
     } for uc in use_cases]
     
     pretrained_data = [{
@@ -111,6 +115,8 @@ def delete_usecase():
             'error': str(e),
             'success': False
         }), 500
+        
+        
 @use_case_bp.route('/delete_pretrained_usecase', methods=['DELETE'])
 def delete_pretrained_usecase():
     use_case_id = request.args.get('id')
@@ -209,6 +215,7 @@ def newexperiment():
     use_case_id = request.args.get('use_case_id')
     filename = request.args.get('filename')
     return render_template('use_case/newprojet.html', use_case_id=use_case_id, filename=filename)
+
 @use_case_bp.route('/create_pretrained_usecase', methods=['POST'])
 def create_pretrained_usecase():
     try:

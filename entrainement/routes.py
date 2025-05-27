@@ -7,10 +7,6 @@ from flask import Blueprint, request, render_template, jsonify, abort, current_a
 from sklearn.linear_model import LogisticRegression
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.pipeline import Pipeline
-from sklearn.impute import SimpleImputer
-from sklearn.preprocessing import StandardScaler, MinMaxScaler, RobustScaler
-from sklearn.preprocessing import OneHotEncoder, OrdinalEncoder
-from sklearn.compose import ColumnTransformer
 from sklearn.ensemble import AdaBoostClassifier, GradientBoostingClassifier, RandomForestClassifier
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score
 from sklearn.svm import SVC
@@ -53,7 +49,6 @@ def new_experiment():
 
 # 🔹 Lancer une expérience personnalisée avec pipeline dynamique
 @entrainement.route('/run_experiment/<int:use_case_id>', methods=['POST'])
-@entrainement.route('/run_experiment/<int:use_case_id>', methods=['POST'])
 def run_experiment(use_case_id):
     if not request.is_json:
         abort(400, "Requête JSON attendue")
@@ -71,55 +66,17 @@ def run_experiment(use_case_id):
         use_case = UseCase.query.get_or_404(use_case_id)
         filepath = get_safe_filepath(use_case.filename)
         df = pd.read_csv(filepath) if filepath.endswith('.csv') else pd.read_excel(filepath)
+        # configs = get_all_features()
+        # target_column = use_case.target_column
+        # processed_df = apply_feature_processing(df, configs)
+        
+        # if target_column not in processed_df.columns:
+        #     return jsonify({'status': 'error', 'message': f"Colonne cible '{target_column}' absente"}), 400
 
-        target_column = use_case.target_column
-        if target_column not in df.columns:
-            return jsonify({'status': 'error', 'message': f"Colonne cible '{target_column}' absente"}), 400
+        # X = processed_df.drop(columns=[target_column])
+        # y = processed_df[target_column]
 
-        X = df.drop(columns=[target_column])
-        y = df[target_column]
-
-        selected_feature_names = [f['name'] for f in features]
-        X = X[selected_feature_names]
-
-        numerical_features, categorical_features = [], []
-        feature_strategies = {f['name']: f for f in features}
-
-        for f in features:
-            if 'int' in f['type'] or 'float' in f['type']:
-                numerical_features.append(f['name'])
-            elif 'object' in f['type'] or 'category' in f['type']:
-                categorical_features.append(f['name'])
-
-        def get_num_pipeline(strategy):
-            impute = strategy.get('imputation', 'mean')
-            transform = strategy.get('transformer', 'standard')
-            imputer = SimpleImputer(strategy=impute if impute in ['mean', 'median'] else 'constant', fill_value=0)
-            scaler = {
-                'standard': StandardScaler(),
-                'minmax': MinMaxScaler(),
-                'robust': RobustScaler()
-            }.get(transform, StandardScaler())
-            return Pipeline([('imputer', imputer), ('scaler', scaler)])
-
-        def get_cat_pipeline(strategy):
-            impute = strategy.get('imputation', 'mode')
-            transform = strategy.get('transformer', 'ordinal')
-            imputer = SimpleImputer(strategy='most_frequent' if impute == 'mode' else 'constant', fill_value='Unknown')
-            encoder = {
-                'onehot': OneHotEncoder(handle_unknown='ignore'),
-                'ordinal': OrdinalEncoder()
-            }.get(transform, OrdinalEncoder())
-            return Pipeline([('imputer', imputer), ('encoder', encoder)])
-
-        transformers = []
-        if numerical_features:
-            transformers.append(('num', get_num_pipeline(feature_strategies[numerical_features[0]]), numerical_features))
-        if categorical_features:
-            transformers.append(('cat', get_cat_pipeline(feature_strategies[categorical_features[0]]), categorical_features))
-
-        preprocessor = ColumnTransformer(transformers=transformers)
-
+        
         model_info = models[0]  # Premier modèle sélectionné
         model_name = model_info['name'].lower()
         model_params = model_info.get('params', {})
@@ -130,37 +87,37 @@ def run_experiment(use_case_id):
 
         model = ModelClass(**model_params)
 
-        pipeline = Pipeline([
-            ('preprocessing', preprocessor),
-            ('model', model)
-        ])
+        # pipeline = Pipeline([
+        #     ('preprocessing', processed_df),
+        #     ('model', model)
+        # ])
 
-        pipeline.fit(X, y)
-        y_pred = pipeline.predict(X)
+        # pipeline.fit(X, y)
+        # y_pred = pipeline.predict(X)
 
-        metrics = {
-            'accuracy': round(accuracy_score(y, y_pred), 4),
-            'precision': round(precision_score(y, y_pred, zero_division=0), 4),
-            'recall': round(recall_score(y, y_pred, zero_division=0), 4),
-            'f1_score': round(f1_score(y, y_pred, zero_division=0), 4)
-        }
+        # metrics = {
+        #     'accuracy': round(accuracy_score(y, y_pred), 4),
+        #     'precision': round(precision_score(y, y_pred, zero_division=0), 4),
+        #     'recall': round(recall_score(y, y_pred, zero_division=0), 4),
+        #     'f1_score': round(f1_score(y, y_pred, zero_division=0), 4)
+        # }
 
-        # Sauvegarde de l'expérience dans la DB
-        experiment = Experiment(
-            use_case_id=use_case_id,
-            parameters=data,
-            results=metrics,
-            status='completed'
-        )
-        db.session.add(experiment)
-        db.session.commit()
+        # # Sauvegarde de l'expérience dans la DB
+        # experiment = Experiment(
+        #     use_case_id=use_case_id,
+        #     parameters=data,
+        #     results=metrics,
+        #     status='completed'
+        # )
+        # db.session.add(experiment)
+        # db.session.commit()
 
-        return jsonify({
-            'status': 'success',
-            'experiment_id': experiment.id,
-            'metrics': metrics,
-            'message': 'Expérience exécutée et sauvegardée avec succès'
-        })
+        # return jsonify({
+        #     'status': 'success',
+        #     'experiment_id': experiment.id,
+        #     'metrics': metrics,
+        #     'message': 'Expérience exécutée et sauvegardée avec succès'
+        # })
 
     except Exception as e:
         db.session.rollback()
@@ -294,3 +251,6 @@ def run_pretrained():
     except Exception as e:
         current_app.logger.error(f"Error in run_pretrained: {str(e)}\n{traceback.format_exc()}")
         return jsonify({'error': 'Execution error', 'message': str(e)}), 500
+
+
+

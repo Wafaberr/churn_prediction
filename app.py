@@ -5,11 +5,14 @@ from flask import Flask, render_template, request
 from extensions import db , bcrypt,login_manager,mail,migrate
 from flask_login import  login_required
 import os
-from models import User,UseCase  # Assurez-vous que le fichier models.py est dans le même répertoire
+from models import User  # Assurez-vous que le fichier models.py est dans le même répertoire
 from auth.routes import auth  # Assurez-vous que le fichier routes.py est dans le même répertoire
 from data_sets.routes import data_set  # Assurez-vous que le fichier routes.py est dans le même répertoire
 from use_cases.routes import use_case_bp  # Assurez-vous que le fichier routes.py est dans le même répertoire
-from entrainement.routes import entrainement  # Assurez-vous que le fichier routes.py est dans le même répertoire
+from entrainement.routes import entrainement 
+from entrainement.api.features import features_bp
+from entrainement.api.preprocessing import preprocessing_bp
+# Assurez-vous que le fichier routes.py est dans le même répertoire
 def create_app():
     app = Flask(__name__)
 
@@ -45,6 +48,8 @@ def create_app():
     migrate.init_app(app, db)
     
     app.register_blueprint(auth)
+    app.register_blueprint(preprocessing_bp)
+    app.register_blueprint(features_bp)
     app.register_blueprint(use_case_bp)
     app.register_blueprint(data_set)
     app.register_blueprint(entrainement)
